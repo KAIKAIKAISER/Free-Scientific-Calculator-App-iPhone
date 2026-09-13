@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import CurrencyFlag from "../components/CurrencyFlag"
 import LucideIcon from "../components/LucideIcon"
-import { currencies, getCurrency, popularCurrencyCodes } from "../data/currencies"
+import { currencies, getCurrency } from "../data/currencies"
 import { useI18n } from "../i18n"
 import { getExchangeRates, refreshExchangeRates, RatesResult } from "../services/exchangeRate"
 import { useTheme } from "../theme"
@@ -22,6 +22,7 @@ const CURRENCY_CODE_FONT_SIZE = Math.max(18, Math.min(27, screenHeight * 0.03))
 const CURRENCY_AMOUNT_FONT_SIZE = Math.max(14, Math.min(17, screenHeight * 0.02))
 const CURRENCY_NAME_FONT_SIZE = Math.max(12, Math.min(16, screenHeight * 0.018))
 const CURRENCY_KEYPAD_FONT_SIZE = Math.max(20, Math.min(26, screenHeight * 0.031))
+const currencyCodes = Object.keys(currencies)
 
 type Props = { onBack?: () => void; onOpenTools?: () => void }
 
@@ -43,7 +44,10 @@ function safeDisplayedCodes(value: string | null) {
     try {
         const parsed: unknown = JSON.parse(value)
         if (!Array.isArray(parsed)) return DEFAULT_CURRENCIES
-        const codes = parsed.filter((code): code is string => typeof code === "string" && !!currencies[code])
+        const codes = parsed
+            .filter((code): code is string => typeof code === "string")
+            .map((code) => code.trim().toUpperCase())
+            .filter((code) => /^[A-Z]{3}$/.test(code))
         const uniqueCodes = Array.from(new Set(codes))
         return uniqueCodes.length
             ? [...uniqueCodes, ...DEFAULT_CURRENCIES.filter((code) => !uniqueCodes.includes(code))]
@@ -71,7 +75,7 @@ export default function Currency({ onBack, onOpenTools }: Props = {}) {
         setIsRefreshing(true)
         setRateFetchFailed(false)
         try {
-            const quotes = popularCurrencyCodes.filter((code) => code !== "EUR")
+            const quotes = displayedCurrencies.filter((code) => code !== "EUR")
             const result = forceRefresh
                 ? await refreshExchangeRates("EUR", quotes)
                 : await getExchangeRates({ base: "EUR", quotes })
@@ -82,7 +86,7 @@ export default function Currency({ onBack, onOpenTools }: Props = {}) {
         } finally {
             setIsRefreshing(false)
         }
-    }, [])
+    }, [displayedCurrencies])
 
     useEffect(() => {
         void AsyncStorage.multiGet([CURRENCY_KEY, FAVORITES_KEY]).then(([displayed, savedFavorites]) => {
@@ -348,9 +352,11 @@ type PickerProps = {
 
 function CurrencyPicker({ visible, searchText, favorites, locale, t, onSearch, onClose, onSelect, onToggleFavorite }: PickerProps) {
     const { colors } = useTheme()
+    const normalizedQuery = searchText.trim().toUpperCase()
+    const customCode = /^[A-Z]{3}$/.test(normalizedQuery) && !currencies[normalizedQuery] ? normalizedQuery : ""
     const filteredCodes = useMemo(() => {
         const query = searchText.trim().toLocaleLowerCase(localeTag(locale))
-        return popularCurrencyCodes
+        return currencyCodes
             .filter((code) => {
                 const item = getCurrency(code)
                 return !query || [code, item.symbol, item.name[locale], item.regionName[locale], item.name.en, item.regionName.en].some((value) => value.toLocaleLowerCase(localeTag(locale)).includes(query))
@@ -369,6 +375,15 @@ function CurrencyPicker({ visible, searchText, favorites, locale, t, onSearch, o
                     </View>
                     <TextInput style={[styles.searchBar, { backgroundColor: colors.elevated, color: colors.text }]} placeholder={t("currency.searchPlaceholder")} placeholderTextColor={colors.tertiaryText} clearButtonMode="while-editing" value={searchText} onChangeText={onSearch} autoCorrect={false} autoCapitalize="characters" />
                     <ScrollView style={styles.pickerList} keyboardShouldPersistTaps="handled">
+                        {customCode && (
+                            <TouchableOpacity style={[styles.customCodeRow, { backgroundColor: colors.accentSurface, borderBottomColor: colors.border }]} onPress={() => onSelect(customCode)}>
+                                <LucideIcon name="plus" size={24} color={colors.accent} />
+                                <View style={styles.currencyIdentity}>
+                                    <Text style={[styles.pickerCode, { color: colors.text }]}>{t("currency.addCode", { code: customCode })}</Text>
+                                    <Text style={[styles.pickerName, { color: colors.secondaryText }]}>{customCode}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
                         {filteredCodes.length ? filteredCodes.map((code) => {
                             const item = getCurrency(code)
                             const favorite = favorites.includes(code)
@@ -381,7 +396,7 @@ function CurrencyPicker({ visible, searchText, favorites, locale, t, onSearch, o
                                     <TouchableOpacity onPress={() => onToggleFavorite(code)} accessibilityLabel={t("currency.favorite")}><Text style={[styles.favorite, { color: colors.secondaryText }, favorite && { color: colors.accent }]}>{favorite ? "★" : "☆"}</Text></TouchableOpacity>
                                 </View>
                             )
-                        }) : <Text style={[styles.noResults, { color: colors.secondaryText }]}>{t("currency.noResults")}</Text>}
+                        }) : !customCode && <Text style={[styles.noResults, { color: colors.secondaryText }]}>{t("currency.noResults")}</Text>}
                     </ScrollView>
                 </View>
             </View>
@@ -428,6 +443,7 @@ const styles = StyleSheet.create({
     searchBar: { width: "100%", height: 48, backgroundColor: "#333", borderRadius: 10, paddingHorizontal: 16, color: "white", fontSize: 16, marginBottom: 12 },
     pickerList: { flex: 1, width: "100%" },
     pickerRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, borderBottomColor: "#333", borderBottomWidth: StyleSheet.hairlineWidth },
+    customCodeRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: StyleSheet.hairlineWidth },
     pickerSelect: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
     pickerCode: { color: "white", fontSize: 17, fontWeight: "600" },
     pickerName: { color: "#999", fontSize: 13, marginTop: 2 },

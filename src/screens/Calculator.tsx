@@ -524,17 +524,26 @@ const App = ({ onOpenTools }: Props) => {
                 </View>
                 <View style={styles.historyContainer} onTouchStart={() => setSelectedChunk(-1)}>
                     <ScrollView
-                        contentContainerStyle={{ padding: 10, alignItems: "flex-end" }}
+                        style={styles.historyScroll}
+                        contentContainerStyle={styles.historyContent}
                         showsVerticalScrollIndicator={false}
                     >
                         {history.map((result, index) => (
                             <TouchableOpacity
+                                style={styles.historyRow}
                                 key={`result-${result}-${index}`}
                                 onPressIn={() => hapticFeedback()}
                                 onLongPress={() => handleHistoryCopy(result)}
                                 onPress={() => handleHistoryClick(result)}
                             >
-                                <Text style={[styles.historyText, { color: colors.secondaryText }]}>{result}</Text>
+                                <Text
+                                    style={[styles.historyText, { color: colors.secondaryText }]}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                    minimumFontScale={0.5}
+                                >
+                                    {result}
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
@@ -640,13 +649,30 @@ const styles = StyleSheet.create({
     },
     historyContainer: {
         flex: 1.1,
+        width: "100%",
+        minHeight: 44,
+        overflow: "visible",
+    },
+    historyScroll: {
+        flex: 1,
+        width: "100%",
+    },
+    historyContent: {
+        flexGrow: 1,
         justifyContent: "flex-end",
         alignItems: "flex-end",
-        paddingRight: 20
+        paddingHorizontal: 20,
+        paddingVertical: 6,
+    },
+    historyRow: {
+        maxWidth: "100%",
     },
     historyText: {
-        fontSize: 22,
-        paddingVertical: 5,
+        maxWidth: "100%",
+        fontSize: 20,
+        lineHeight: 26,
+        paddingVertical: 0,
+        textAlign: "right",
         color: "gray"
     },
     inputContainer: {

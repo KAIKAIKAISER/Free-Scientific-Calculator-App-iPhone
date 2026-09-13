@@ -42,5 +42,14 @@ export const currencies: Record<string, Currency> = {
 export const popularCurrencyCodes = ["CNY", "USD", "EUR", "JPY", "GBP", "HKD", "TWD", "KRW", "SGD", "AUD", "CAD", "CHF", "NZD", "THB", "MYR", "PHP", "IDR", "INR", "VND"] as const
 
 export function getCurrency(code: string) {
-    return currencies[code] ?? currencies.USD
+    const normalizedCode = code.toUpperCase()
+    return currencies[normalizedCode] ?? {
+        code: normalizedCode,
+        symbol: normalizedCode,
+        region: "WORLD",
+        flag: "🌐",
+        decimals: 2,
+        name: { en: normalizedCode, "zh-CN": normalizedCode, "zh-TW": normalizedCode },
+        regionName: { en: "Custom currency", "zh-CN": "自定义货币", "zh-TW": "自訂貨幣" },
+    }
 }

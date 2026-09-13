@@ -35,6 +35,7 @@
     "add": "Add currency",
     "remove": "Remove",
     "favorite": "Favorite",
+    "addCode": "Add {{code}}",
     "searchPlaceholder": "Search code, currency or country",
     "refresh": "Refresh rates",
     "updating": "Updating rates…",

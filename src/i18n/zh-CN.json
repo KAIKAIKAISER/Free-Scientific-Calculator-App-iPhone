@@ -4,7 +4,7 @@
     "currency": "汇率", "length": "长度", "area": "面积", "mass": "质量", "volume": "体积", "speed": "速度", "pressure": "压力", "power": "功率", "temperature": "温度", "angle": "角度", "energy": "能量", "force": "力", "fuel": "油耗", "time": "时间", "data": "数据存储", "age": "年龄", "bmi": "BMI", "date": "日期", "discount": "折扣", "loan": "房贷 / 贷款", "numberBase": "进制转换", "percentage": "百分比", "toolbarFull": "工具栏已满（最多 5 个）"
   },
   "currency": {
-    "title": "汇率", "add": "添加货币", "remove": "删除", "favorite": "收藏", "searchPlaceholder": "搜索代码、货币或国家/地区", "refresh": "刷新汇率", "updating": "正在更新汇率…", "tapToLoad": "点击加载汇率", "updatedAt": "更新于 {{time}}", "cached": "正在使用缓存汇率", "updateFailed": "更新失败，正在显示缓存数据", "noRates": "暂无汇率。你仍然可以编辑金额。", "noResults": "未找到货币", "rateSource": "数据源：Frankfurter", "inputHint": "点击金额后直接使用输入法输入"
+    "title": "汇率", "add": "添加货币", "remove": "删除", "favorite": "收藏", "addCode": "添加 {{code}}", "searchPlaceholder": "搜索代码、货币或国家/地区", "refresh": "刷新汇率", "updating": "正在更新汇率…", "tapToLoad": "点击加载汇率", "updatedAt": "更新于 {{time}}", "cached": "正在使用缓存汇率", "updateFailed": "更新失败，正在显示缓存数据", "noRates": "暂无汇率。你仍然可以编辑金额。", "noResults": "未找到货币", "rateSource": "数据源：Frankfurter", "inputHint": "点击金额后直接使用输入法输入"
   },
   "common": { "back": "返回", "cancel": "取消", "done": "完成", "error": "发生错误", "retry": "重试", "year": "年", "month": "月", "day": "日", "price": "原价", "percent": "折扣率", "amount": "金额", "rate": "利率", "duration": "年限", "height": "身高", "weight": "体重" },
   "discount": { "savings": "节省金额", "finalPrice": "折后价" },
