@@ -503,8 +503,8 @@ const App = ({ onOpenTools }: Props) => {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <View style={styles.header}>
-                <View style={[styles.topBar, { top: insets.top + 4 }]}>
+            <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
+                <View style={styles.topBar}>
                     <TouchableOpacity style={[styles.toolbarButton, { backgroundColor: colors.overlay }]} onPress={openHistoryDrawer} activeOpacity={0.6} accessibilityLabel={t("history.title")}>
                         <LucideIcon name="clock" size={19} color={colors.secondaryText} />
                     </TouchableOpacity>
@@ -616,14 +616,13 @@ const styles = StyleSheet.create({
         backgroundColor: "black"
     },
     header: {
-        flex: 1
+        flex: 1,
     },
     topBar: {
-        position: "absolute",
+        position: "relative",
         top: 0,
-        left: 16,
-        right: 16,
         zIndex: 10,
+        marginHorizontal: 16,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -728,7 +727,8 @@ const styles = StyleSheet.create({
         width: "100%",
         alignItems: "flex-end",
         paddingRight: 42,
-        paddingBottom: 2,
+        paddingTop: 2,
+        paddingBottom: 0,
     },
     expressionLine: {
         flexDirection: "row",

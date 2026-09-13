@@ -19,9 +19,9 @@ const CURRENCY_STATUS_HEIGHT = Math.max(28, Math.min(50, screenHeight * 0.045))
 const CURRENCY_KEYPAD_HEIGHT = Math.max(220, Math.min(520, screenHeight * 0.42))
 const CURRENCY_FLAG_SIZE = Math.max(32, Math.min(48, CURRENCY_ROW_HEIGHT * 0.82))
 const CURRENCY_CODE_FONT_SIZE = Math.max(18, Math.min(27, screenHeight * 0.03))
-const CURRENCY_AMOUNT_FONT_SIZE = Math.max(21, Math.min(29, screenHeight * 0.034))
+const CURRENCY_AMOUNT_FONT_SIZE = Math.max(14, Math.min(17, screenHeight * 0.02))
 const CURRENCY_NAME_FONT_SIZE = Math.max(12, Math.min(16, screenHeight * 0.018))
-const CURRENCY_KEYPAD_FONT_SIZE = Math.max(28, Math.min(38, screenHeight * 0.045))
+const CURRENCY_KEYPAD_FONT_SIZE = Math.max(20, Math.min(26, screenHeight * 0.031))
 
 type Props = { onBack?: () => void; onOpenTools?: () => void }
 
@@ -227,7 +227,7 @@ export default function Currency({ onBack, onOpenTools }: Props = {}) {
                         disabled={!menuAction}
                         accessibilityLabel={t("calculator.openTools")}
                     >
-                        <LucideIcon name="grid-3x3" size={20} color={colors.secondaryText} />
+                        <LucideIcon name="grid-3x3" size={16} color={colors.secondaryText} />
                     </TouchableOpacity>
                     <Text style={[styles.title, { color: colors.text }]}>{t("currency.title")}</Text>
                     <TouchableOpacity onPress={() => openPicker("add")} style={styles.iconButton} accessibilityLabel={t("currency.add")}>
@@ -327,7 +327,7 @@ function CurrencyKeypad({ onPress, onClear, onBackspace }: CurrencyKeypadProps) 
                     <Text style={[styles.keypadActionText, { color: colors.accent }]}>AC</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.keypadAction} onPress={onBackspace}>
-                    <LucideIcon name="delete" size={30} color={colors.secondaryText} />
+                    <LucideIcon name="delete" size={20} color={colors.secondaryText} />
                 </TouchableOpacity>
             </View>
         </View>
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     container: { flex: 1, width: "100%" },
     currencySurface: { flex: 1, width: "100%", borderTopLeftRadius: 8, borderTopRightRadius: 8, overflow: "hidden" },
     header: { height: CURRENCY_HEADER_HEIGHT, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 30, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(120,120,120,0.4)" },
-    menuButton: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, justifyContent: "center", alignItems: "center" },
+    menuButton: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, justifyContent: "center", alignItems: "center", transform: [{ translateY: 7 }] },
     iconButton: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center" },
     title: { fontSize: 20, fontWeight: "500" },
     currencyList: { flex: 1 },
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     currencyName: { fontSize: CURRENCY_NAME_FONT_SIZE, marginTop: 2 },
     amountColumn: { width: "42%", alignItems: "flex-end", paddingLeft: 8 },
     amount: { fontSize: CURRENCY_AMOUNT_FONT_SIZE, fontWeight: "400", textAlign: "right", fontVariant: ["tabular-nums"] },
-    amountInput: { minWidth: 105, paddingVertical: 0, paddingHorizontal: 0 },
+    amountInput: { minWidth: 86, paddingVertical: 0, paddingHorizontal: 0 },
     amountName: { maxWidth: "100%", textAlign: "right" },
     statusButton: { height: CURRENCY_STATUS_HEIGHT, alignItems: "center", justifyContent: "center", paddingHorizontal: 16, gap: 2 },
     statusText: { fontSize: 13, textAlign: "center" },
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     keypadText: { fontSize: CURRENCY_KEYPAD_FONT_SIZE, fontWeight: "300" },
     keypadActions: { flex: 1 },
     keypadAction: { flex: 1, alignItems: "center", justifyContent: "center", borderBottomWidth: StyleSheet.hairlineWidth },
-    keypadActionText: { fontSize: 30, fontWeight: "400" },
+    keypadActionText: { fontSize: 18, fontWeight: "400" },
     modalView: { flex: 1 },
     dismissArea: { flex: 1 },
     currencyPicker: { height: "80%", marginTop: "auto", backgroundColor: "#222", borderTopRightRadius: 20, borderTopLeftRadius: 20, padding: 20, alignItems: "center" },
