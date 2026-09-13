@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, createContext } from "react"
 import { StyleSheet, Dimensions, Animated, View, Keyboard, Modal, Pressable } from "react-native"
-import { SafeAreaView, SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context"
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context"
 import { StatusBar } from "expo-status-bar"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
@@ -29,7 +29,6 @@ export const HistoryContext = createContext<{
 })
 
 const MainScreen = () => {
-    const insets = useSafeAreaInsets()
     const { colors, isDark } = useTheme()
     const [pageIndex, setPageIndex] = useState(0)
     const [mounted, setMounted] = useState(false)
@@ -190,15 +189,17 @@ const MainScreen = () => {
                     onLayout={() => setMounted(true)}
                 >
                     {SCREENS.map((screen) => (
-                        <View key={screen.key} style={[styles.screen, { paddingTop: insets.top / 2, backgroundColor: colors.background }]}>{mounted && screen.render()}</View>
+                        <View key={screen.key} style={[styles.screen, { backgroundColor: colors.background }]}>{mounted && screen.render()}</View>
                     ))}
                 </Animated.ScrollView>
 
-                <PinnedToolsTabBar
-                    screenOrder={screenOrder}
-                    scrollX={scrollX}
-                    opacity={tabBarOpacity}
-                />
+                {pageIndex === converterIndex && (
+                    <PinnedToolsTabBar
+                        screenOrder={screenOrder}
+                        scrollX={scrollX}
+                        opacity={tabBarOpacity}
+                    />
+                )}
             </View>
         </SafeAreaView>
     )

@@ -35,6 +35,7 @@ const App = ({ onOpenTools }: Props) => {
     const { colors, isDark, toggleTheme } = useTheme()
     const [currentInput, setCurrentInput] = useState("")
     const [history, setHistory] = useState([])
+    const historyScrollRef = useRef<ScrollView | null>(null)
     const [selectedChunk, setSelectedChunk] = useState(-1)
     const [tempResult, setTempResult] = useState("")
     const [isClipboardMenuVisible, setIsClipboardMenuVisible] = useState(false)
@@ -524,9 +525,11 @@ const App = ({ onOpenTools }: Props) => {
                 </View>
                 <View style={styles.historyContainer} onTouchStart={() => setSelectedChunk(-1)}>
                     <ScrollView
+                        ref={(ref) => { historyScrollRef.current = ref }}
                         style={styles.historyScroll}
                         contentContainerStyle={styles.historyContent}
                         showsVerticalScrollIndicator={false}
+                        onContentSizeChange={() => historyScrollRef.current?.scrollToEnd({ animated: false })}
                     >
                         {history.map((result, index) => (
                             <TouchableOpacity
@@ -648,9 +651,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     historyContainer: {
-        flex: 1.1,
+        flex: 1.35,
         width: "100%",
-        minHeight: 44,
+        minHeight: 104,
         overflow: "visible",
     },
     historyScroll: {

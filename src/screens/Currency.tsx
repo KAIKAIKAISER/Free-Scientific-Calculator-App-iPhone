@@ -222,7 +222,7 @@ export default function Currency({ onBack, onOpenTools }: Props = {}) {
     const menuAction = onOpenTools ?? onBack
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["bottom", "left", "right"]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top", "bottom", "left", "right"]}>
             <View style={[styles.currencySurface, { backgroundColor: colors.surface }]}>
                 <View style={styles.header}>
                     <TouchableOpacity
