@@ -38,6 +38,7 @@ const App = ({ onOpenTools }: Props) => {
     const historyScrollRef = useRef<ScrollView | null>(null)
     const [selectedChunk, setSelectedChunk] = useState(-1)
     const [tempResult, setTempResult] = useState("")
+    const [justCalculated, setJustCalculated] = useState(false)
     const [isClipboardMenuVisible, setIsClipboardMenuVisible] = useState(false)
     const [isEditingChunk, setIsEditingChunk] = useState(false)
     const [expanded, setExpanded] = useState(false)
@@ -61,6 +62,7 @@ const App = ({ onOpenTools }: Props) => {
     useEffect(() => {
         setOnSelect((expression: string) => {
             setCurrentInput(expression)
+            setJustCalculated(false)
         })
     }, [setOnSelect])
 
@@ -119,6 +121,7 @@ const App = ({ onOpenTools }: Props) => {
     const pasteClipboard = async () => {
         const text = await Clipboard.getStringAsync()
         setCurrentInput(text)
+        setJustCalculated(false)
         setIsClipboardMenuVisible(false)
     }
 
@@ -133,6 +136,18 @@ const App = ({ onOpenTools }: Props) => {
     }
 
     const handlePress = (value) => {
+        if (justCalculated) {
+            if (typeof value === "string" && /^[0-9.,]/.test(value)) {
+                setCurrentInput(value === "." ? "0." : value)
+                setTempResult("")
+                setError("")
+                setSelectedChunk(-1)
+                setJustCalculated(false)
+                return
+            }
+            setJustCalculated(false)
+        }
+
         if (selectedChunk !== -1) {
             let chunks = currentInput.split(/([+\-*/])/)
             if (value.match(/[0-9.,]/)) {
@@ -164,6 +179,7 @@ const App = ({ onOpenTools }: Props) => {
         setTempResult("")
         setError("")
         setSelectedChunk(-1)
+        setJustCalculated(false)
     }
 
     const handleClearAll = () => {
@@ -174,6 +190,7 @@ const App = ({ onOpenTools }: Props) => {
         setError("")
         setHistory([])
         setSelectedChunk(-1)
+        setJustCalculated(false)
         void clearHistory().then(() => bumpRefreshKey())
     }
 
@@ -185,6 +202,7 @@ const App = ({ onOpenTools }: Props) => {
     const handleSelectChunk = (index) => {
         setSelectedChunk(index)
         setIsEditingChunk(true)
+        setJustCalculated(false)
     }
 
     const evaluateInput = (input) => {
@@ -215,6 +233,7 @@ const App = ({ onOpenTools }: Props) => {
             saveCalculation(currentInput, String(result)).then(() => bumpRefreshKey())
             setCurrentInput(String(result))
             setSelectedChunk(-1)
+            setJustCalculated(true)
         } catch (error) {
             setError(t("calculator.invalidInput"))
         }
@@ -228,6 +247,7 @@ const App = ({ onOpenTools }: Props) => {
     const handleHistoryClick = (item) => {
         const parts = item.split("=")
         setCurrentInput(parts[0].trim())
+        setJustCalculated(false)
     }
 
     const handleExpand = () => {
@@ -270,6 +290,7 @@ const App = ({ onOpenTools }: Props) => {
     }
 
     const handleBackspace = () => {
+        setJustCalculated(false)
         const operatorRegex =
             /asin\(|acos\(|atan\(|sinh\(|cosh\(|tanh\(|asinh\(|acosh\(|atanh\(|sin\(|cos\(|tan\(|pi|sqrt\(|log10\(|log\(/g
         const removeLastOperatorIfPresent = (text) => {

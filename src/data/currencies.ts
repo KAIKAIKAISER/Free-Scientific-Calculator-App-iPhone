@@ -23,8 +23,9 @@ export const currencies: Record<string, Currency> = {
     EUR: { code: "EUR", symbol: "€", region: "EU", flag: "🇪🇺", decimals: 2, name: { en: "Euro", "zh-CN": "欧元", "zh-TW": "歐元" }, regionName: { en: "European Union", "zh-CN": "欧盟", "zh-TW": "歐盟" } },
     JPY: { code: "JPY", symbol: "¥", region: "JP", flag: "🇯🇵", decimals: 0, name: { en: "Japanese Yen", "zh-CN": "日元", "zh-TW": "日圓" }, regionName: { en: "Japan", "zh-CN": "日本", "zh-TW": "日本" } },
     GBP: { code: "GBP", symbol: "£", region: "GB", flag: "🇬🇧", decimals: 2, name: { en: "Pound Sterling", "zh-CN": "英镑", "zh-TW": "英鎊" }, regionName: { en: "United Kingdom", "zh-CN": "英国", "zh-TW": "英國" } },
-    HKD: { code: "HKD", symbol: "HK$", region: "HK", flag: "🇭🇰", decimals: 2, name: { en: "Hong Kong Dollar", "zh-CN": "港币", "zh-TW": "港幣" }, regionName: { en: "Hong Kong", "zh-CN": "中国香港", "zh-TW": "中國香港" } },
-    TWD: { code: "TWD", symbol: "NT$", region: "TW", flag: "🇹🇼", decimals: 0, name: { en: "New Taiwan Dollar", "zh-CN": "新台币", "zh-TW": "新臺幣" }, regionName: { en: "Taiwan", "zh-CN": "中国台湾", "zh-TW": "臺灣" } },
+    HKD: { code: "HKD", symbol: "HK$", region: "HK", flag: "🇭🇰", decimals: 2, name: { en: "Hong Kong Dollar", "zh-CN": "港币", "zh-TW": "港幣" }, regionName: { en: "Hong Kong", "zh-CN": "香港", "zh-TW": "香港" } },
+    MOP: { code: "MOP", symbol: "MOP$", region: "MO", flag: "🇲🇴", decimals: 2, name: { en: "Macanese Pataca", "zh-CN": "澳门元", "zh-TW": "澳門元" }, regionName: { en: "Macau", "zh-CN": "澳门", "zh-TW": "澳門" } },
+    TWD: { code: "TWD", symbol: "NT$", region: "TW", flag: "🇹🇼", decimals: 0, name: { en: "New Taiwan Dollar", "zh-CN": "新台币", "zh-TW": "新臺幣" }, regionName: { en: "Taiwan", "zh-CN": "台湾", "zh-TW": "臺灣" } },
     KRW: { code: "KRW", symbol: "₩", region: "KR", flag: "🇰🇷", decimals: 0, name: { en: "South Korean Won", "zh-CN": "韩元", "zh-TW": "韓圓" }, regionName: { en: "South Korea", "zh-CN": "韩国", "zh-TW": "南韓" } },
     SGD: { code: "SGD", symbol: "S$", region: "SG", flag: "🇸🇬", decimals: 2, name: { en: "Singapore Dollar", "zh-CN": "新加坡元", "zh-TW": "新加坡元" }, regionName: { en: "Singapore", "zh-CN": "新加坡", "zh-TW": "新加坡" } },
     AUD: { code: "AUD", symbol: "A$", region: "AU", flag: "🇦🇺", decimals: 2, name: { en: "Australian Dollar", "zh-CN": "澳大利亚元", "zh-TW": "澳洲元" }, regionName: { en: "Australia", "zh-CN": "澳大利亚", "zh-TW": "澳洲" } },
@@ -39,7 +40,7 @@ export const currencies: Record<string, Currency> = {
     VND: { code: "VND", symbol: "₫", region: "VN", flag: "🇻🇳", decimals: 0, name: { en: "Vietnamese Dong", "zh-CN": "越南盾", "zh-TW": "越南盾" }, regionName: { en: "Vietnam", "zh-CN": "越南", "zh-TW": "越南" } },
 }
 
-export const popularCurrencyCodes = ["CNY", "USD", "EUR", "JPY", "GBP", "HKD", "TWD", "KRW", "SGD", "AUD", "CAD", "CHF", "NZD", "THB", "MYR", "PHP", "IDR", "INR", "VND"] as const
+export const popularCurrencyCodes = ["CNY", "USD", "EUR", "JPY", "GBP", "HKD", "MOP", "TWD", "KRW", "SGD", "AUD", "CAD", "CHF", "NZD", "THB", "MYR", "PHP", "IDR", "INR", "VND"] as const
 
 export function getCurrency(code: string) {
     const normalizedCode = code.toUpperCase()
