@@ -11,6 +11,7 @@ import Button from "../components/Button"
 import LucideIcon from "../components/LucideIcon"
 import { saveCalculation } from "../utils/historyStorage"
 import { CalcCallbackContext, HistoryContext } from "../../App"
+import { useI18n } from "../i18n"
 
 const config = {}
 const MathJS = create(all, config)
@@ -25,6 +26,7 @@ const EXPANDED_BUTTON_SIZE = (screenWidth - 40) / 5
 const App = () => {
     const { setOnSelect, bumpRefreshKey } = useContext(CalcCallbackContext)
     const { openHistory } = useContext(HistoryContext)
+    const { t } = useI18n()
     const [currentInput, setCurrentInput] = useState("")
     const [history, setHistory] = useState([])
     const [selectedChunk, setSelectedChunk] = useState(-1)
@@ -189,7 +191,7 @@ const App = () => {
             setCurrentInput(String(result))
             setSelectedChunk(-1)
         } catch (error) {
-            setError("Invalid input")
+            setError(t("calculator.invalidInput"))
         }
     }
 
@@ -407,7 +409,7 @@ const App = () => {
                 {isClipboardMenuVisible && (
                     <View style={styles.clipboardMenuContainer}>
                         <TouchableOpacity style={styles.clipboardMenu} onPress={pasteClipboard}>
-                            <Text style={styles.clipboardMenuText}>Paste</Text>
+                            <Text style={styles.clipboardMenuText}>{t("calculator.paste")}</Text>
                         </TouchableOpacity>
                     </View>
                 )}

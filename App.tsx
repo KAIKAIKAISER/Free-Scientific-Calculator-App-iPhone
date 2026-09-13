@@ -10,6 +10,7 @@ import Calculator from "./src/screens/Calculator"
 import PinnedToolScreen from "./src/screens/PinnedToolScreen"
 import PinnedToolsTabBar from "./src/components/PinnedToolsTabBar"
 import HistoryDrawerContent from "./src/components/HistoryDrawerContent"
+import { I18nProvider } from "./src/i18n"
 
 const { width } = Dimensions.get("window")
 const STORAGE_KEY = "pinnedConverterTools"
@@ -230,26 +231,28 @@ const App = () => {
 
     return (
         <GestureHandlerRootView style={styles.container}>
-            <SafeAreaProvider>
-                <HistoryContext.Provider value={contextValue}>
-                    <CalcCallbackContext.Provider value={{ setOnSelect, bumpRefreshKey }}>
-                        <MainScreen />
-                        <Modal
-                            animationType="slide"
-                            visible={historyVisible}
-                            transparent={true}
-                            onRequestClose={closeHistory}
-                        >
-                            <View style={styles.modalOverlay}>
-                                <Pressable style={styles.modalDismissArea} onPress={closeHistory} />
-                                <View style={styles.modalSheet}>
-                                    <HistoryDrawerContent onClose={closeHistory} />
+            <I18nProvider>
+                <SafeAreaProvider>
+                    <HistoryContext.Provider value={contextValue}>
+                        <CalcCallbackContext.Provider value={{ setOnSelect, bumpRefreshKey }}>
+                            <MainScreen />
+                            <Modal
+                                animationType="slide"
+                                visible={historyVisible}
+                                transparent={true}
+                                onRequestClose={closeHistory}
+                            >
+                                <View style={styles.modalOverlay}>
+                                    <Pressable style={styles.modalDismissArea} onPress={closeHistory} />
+                                    <View style={styles.modalSheet}>
+                                        <HistoryDrawerContent onClose={closeHistory} />
+                                    </View>
                                 </View>
-                            </View>
-                        </Modal>
-                    </CalcCallbackContext.Provider>
-                </HistoryContext.Provider>
-            </SafeAreaProvider>
+                            </Modal>
+                        </CalcCallbackContext.Provider>
+                    </HistoryContext.Provider>
+                </SafeAreaProvider>
+            </I18nProvider>
         </GestureHandlerRootView>
     )
 }

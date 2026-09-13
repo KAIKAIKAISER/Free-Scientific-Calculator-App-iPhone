@@ -4,6 +4,32 @@
 
 Free and Open Source Scientific Calculator App for iPhone
 
+This fork keeps ConvCalc's calculator and unit-conversion core and adds the first
+phase of the multi-function calculator plan: localized currency metadata, an
+offline-first exchange-rate service, a bundled Taiwan flag fallback, and
+reproducible unsigned iOS builds.
+
+## Development
+
+```bash
+npm ci
+npm run ts:check
+npx expo start
+```
+
+The app follows the system language by default and includes English, Simplified
+Chinese, and Traditional Chinese resources under `src/i18n/`. Exchange rates use
+the no-key Frankfurter provider and are cached in AsyncStorage, so the last
+successful rates remain available without a network connection.
+
+## iOS builds
+
+GitHub Actions uses the pinned `macos-15` runner and Node.js 22. Run **iOS Build
+Check** manually or push to `main` to produce the `Calculator-unsigned` IPA
+artifact. A release can be created from a `v*` tag, or manually by entering a
+release tag in the workflow. The unsigned IPA is intended to be re-signed by
+SideStore, Sideloadly, AltStore, or another sideloading tool.
+
 
 
 <a href="https://apps.apple.com/app/convcalc-calculator-converter/id6472445974">

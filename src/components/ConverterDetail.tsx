@@ -19,6 +19,7 @@ import {
     formatNumber,
 } from "../utils/conversions"
 import { hapticFeedback, hapticFeedbackSwitch } from "../utils"
+import { toolLabelKey, unitNameKey, useI18n } from "../i18n"
 import Button from "./Button"
 import LucideIcon from "./LucideIcon"
 
@@ -50,6 +51,7 @@ export default ({ tool, onBack }: Props) => {
 // ─── Unit Converter ───────────────────────────────────────────
 
 function UnitConverter({ tool, onBack }: Props) {
+    const { t } = useI18n()
     const [input, setInput] = useState("1")
     const [inputEdited, setInputEdited] = useState(false)
     const [fromIndex, setFromIndex] = useState(0)
@@ -92,7 +94,7 @@ function UnitConverter({ tool, onBack }: Props) {
 
     return (
         <View style={styles.container}>
-            <Header icon={tool.icon} label={tool.label} onBack={onBack} />
+            <Header icon={tool.icon} label={t(toolLabelKey(tool.key, tool.label))} onBack={onBack} />
 
             <ScrollView style={styles.resultsList} contentContainerStyle={{ paddingBottom: 10 }}>
                 {results.map((r, i) => (
@@ -105,7 +107,7 @@ function UnitConverter({ tool, onBack }: Props) {
                             setInputEdited(false)
                         }}
                     >
-                        <Text style={[styles.resultLabel, i === fromIndex && { color: "white", fontSize: 22 }]}>{r.name}</Text>
+                        <Text style={[styles.resultLabel, i === fromIndex && { color: "white", fontSize: 22 }]}>{t(unitNameKey(r.name))}</Text>
                         <View style={styles.resultValueRow}>
                             <Text style={[styles.resultValue, i === fromIndex && { color: "#F69A06", fontSize: 26 }]} numberOfLines={1}>
                                 {formatConversionResult(r.value)}
@@ -125,41 +127,42 @@ function UnitConverter({ tool, onBack }: Props) {
 
 type CalcFieldConfig = {
     key: string
-    label: string
+    labelKey: string
     placeholder: string
     suffix?: string
 }
 
 const calcFieldConfigs: Record<string, CalcFieldConfig[]> = {
     age: [
-        { key: "year", label: "Year", placeholder: "1990" },
-        { key: "month", label: "Month", placeholder: "1" },
-        { key: "day", label: "Day", placeholder: "1" },
+        { key: "year", labelKey: "common.year", placeholder: "1990" },
+        { key: "month", labelKey: "common.month", placeholder: "1" },
+        { key: "day", labelKey: "common.day", placeholder: "1" },
     ],
     bmi: [
-        { key: "height", label: "Height (cm)", placeholder: "170" },
-        { key: "weight", label: "Weight (kg)", placeholder: "70" },
+        { key: "height", labelKey: "common.height", placeholder: "170", suffix: " cm" },
+        { key: "weight", labelKey: "common.weight", placeholder: "70", suffix: " kg" },
     ],
     date: [
-        { key: "year1", label: "Year 1", placeholder: "2024" },
-        { key: "month1", label: "Month 1", placeholder: "1" },
-        { key: "day1", label: "Day 1", placeholder: "1" },
-        { key: "year2", label: "Year 2", placeholder: "2025" },
-        { key: "month2", label: "Month 2", placeholder: "1" },
-        { key: "day2", label: "Day 2", placeholder: "1" },
+        { key: "year1", labelKey: "common.year", placeholder: "2024" },
+        { key: "month1", labelKey: "common.month", placeholder: "1" },
+        { key: "day1", labelKey: "common.day", placeholder: "1" },
+        { key: "year2", labelKey: "common.year", placeholder: "2025" },
+        { key: "month2", labelKey: "common.month", placeholder: "1" },
+        { key: "day2", labelKey: "common.day", placeholder: "1" },
     ],
     discount: [
-        { key: "price", label: "Price", placeholder: "100" },
-        { key: "percent", label: "%", placeholder: "20" },
+        { key: "price", labelKey: "common.price", placeholder: "100" },
+        { key: "percent", labelKey: "common.percent", placeholder: "20", suffix: "%" },
     ],
     loan: [
-        { key: "principal", label: "Amount", placeholder: "200000" },
-        { key: "rate", label: "Rate", placeholder: "5", suffix: "%" },
-        { key: "years", label: "Duration", placeholder: "30", suffix: " yrs" },
+        { key: "principal", labelKey: "common.amount", placeholder: "200000" },
+        { key: "rate", labelKey: "common.rate", placeholder: "5", suffix: "%" },
+        { key: "years", labelKey: "common.duration", placeholder: "30", suffix: " yrs" },
     ],
 }
 
 function CalculatorView({ tool, onBack }: Props) {
+    const { t } = useI18n()
     const fields = calcFieldConfigs[tool.key] || []
     const initialValues: Record<string, string> = {}
     fields.forEach((f) => (initialValues[f.key] = f.placeholder))
@@ -219,7 +222,7 @@ function CalculatorView({ tool, onBack }: Props) {
 
     return (
         <View style={styles.container}>
-            <Header icon={tool.icon} label={tool.label} onBack={onBack} />
+            <Header icon={tool.icon} label={t(toolLabelKey(tool.key, tool.label))} onBack={onBack} />
 
             <ScrollView style={styles.resultsList} contentContainerStyle={{ paddingBottom: 10 }}>
                 {fields.map((f) => (
@@ -228,7 +231,7 @@ function CalculatorView({ tool, onBack }: Props) {
                         style={[styles.calcFieldRow, activeField === f.key && styles.resultRowActive]}
                         onPress={() => setActiveField(f.key)}
                     >
-                        <Text style={styles.resultLabel}>{f.label}</Text>
+                        <Text style={styles.resultLabel}>{t(f.labelKey)}</Text>
                         <Text style={[styles.resultValue, activeField === f.key && { color: "#F69A06" }]}>
                             {formatInputDisplay(values[f.key] || f.placeholder)}{f.suffix ? f.suffix : ""}
                         </Text>
@@ -237,7 +240,7 @@ function CalculatorView({ tool, onBack }: Props) {
 
                 {result && (
                     <View style={styles.calcResult}>
-                        {renderCalcResult(tool.key, result)}
+                        {renderCalcResult(tool.key, result, t)}
                     </View>
                 )}
             </ScrollView>
@@ -247,12 +250,12 @@ function CalculatorView({ tool, onBack }: Props) {
     )
 }
 
-function renderCalcResult(key: string, result: any) {
+function renderCalcResult(key: string, result: any, t: (key: string) => string) {
     switch (key) {
         case "age":
             return (
                 <>
-                    <Text style={styles.calcResultTitle}>Age</Text>
+                    <Text style={styles.calcResultTitle}>{t("tools.age")}</Text>
                     <Text style={styles.calcResultText}>
                         {result.years} years, {result.months} months, {result.days} days
                     </Text>
@@ -261,7 +264,7 @@ function renderCalcResult(key: string, result: any) {
         case "bmi":
             return (
                 <>
-                    <Text style={styles.calcResultTitle}>BMI</Text>
+                    <Text style={styles.calcResultTitle}>{t("tools.bmi")}</Text>
                     <Text style={styles.calcResultText}>
                         {result.bmi} — {result.category}
                     </Text>
@@ -270,7 +273,7 @@ function renderCalcResult(key: string, result: any) {
         case "date":
             return (
                 <>
-                    <Text style={styles.calcResultTitle}>Difference</Text>
+                    <Text style={styles.calcResultTitle}>{t("tools.date")}</Text>
                     <Text style={styles.calcResultText}>{formatNumber(result.totalDays, 0)} days</Text>
                     <Text style={styles.calcResultText}>{formatNumber(result.weeks, 0)} weeks</Text>
                     <Text style={styles.calcResultText}>{formatNumber(result.months, 1)} months</Text>
@@ -280,18 +283,18 @@ function renderCalcResult(key: string, result: any) {
         case "discount":
             return (
                 <>
-                    <Text style={styles.calcResultTitle}>Result</Text>
-                    <Text style={styles.calcResultText}>Savings: {formatNumber(result.savings)}</Text>
-                    <Text style={styles.calcResultText}>Final price: {formatNumber(result.finalPrice)}</Text>
+                    <Text style={styles.calcResultTitle}>{t("tools.discount")}</Text>
+                    <Text style={styles.calcResultText}>{t("discount.savings")}: {formatNumber(result.savings)}</Text>
+                    <Text style={styles.calcResultText}>{t("discount.finalPrice")}: {formatNumber(result.finalPrice)}</Text>
                 </>
             )
         case "loan":
             return (
                 <>
-                    <Text style={styles.calcResultTitle}>Loan Summary</Text>
-                    <Text style={styles.calcResultText}>Monthly: {formatNumber(result.monthly)}</Text>
-                    <Text style={styles.calcResultText}>Total paid: {formatNumber(result.totalPaid)}</Text>
-                    <Text style={styles.calcResultText}>Total interest: {formatNumber(result.totalInterest)}</Text>
+                    <Text style={styles.calcResultTitle}>{t("tools.loan")}</Text>
+                    <Text style={styles.calcResultText}>{t("loan.monthly")}: {formatNumber(result.monthly)}</Text>
+                    <Text style={styles.calcResultText}>{t("loan.totalPaid")}: {formatNumber(result.totalPaid)}</Text>
+                    <Text style={styles.calcResultText}>{t("loan.totalInterest")}: {formatNumber(result.totalInterest)}</Text>
                 </>
             )
         default:
@@ -315,7 +318,10 @@ function Header({ icon, label, onBack }: {
             ) : (
                 <View style={styles.headerSpacer} />
             )}
-            <View style={styles.headerCenter} />
+            <View style={styles.headerCenter}>
+                <LucideIcon name={icon} size={20} color="#F69A06" />
+                <Text style={styles.headerTitle}>{label}</Text>
+            </View>
             <View style={styles.headerSpacer} />
         </View>
     )

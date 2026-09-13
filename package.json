@@ -1,6 +1,6 @@
 {
     "name": "calculatorapp",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "main": "node_modules/expo/AppEntry.js",
     "scripts": {
         "ts:check": "tsc",

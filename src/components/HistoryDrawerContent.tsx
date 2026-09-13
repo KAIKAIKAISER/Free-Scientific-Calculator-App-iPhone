@@ -5,13 +5,14 @@ import dayjs from "dayjs"
 import { getHistory, clearHistory, CalculationEntry } from "../utils/historyStorage"
 import LucideIcon from "./LucideIcon"
 import { HistoryContext } from "../../App"
+import { useI18n } from "../i18n"
 
 type Section = {
     title: string
     data: CalculationEntry[]
 }
 
-function groupByDate(entries: CalculationEntry[]): Section[] {
+function groupByDate(entries: CalculationEntry[], locale: string, todayLabel: string, yesterdayLabel: string): Section[] {
     const groups: Record<string, CalculationEntry[]> = {}
     const order: string[] = []
 
@@ -21,12 +22,12 @@ function groupByDate(entries: CalculationEntry[]): Section[] {
         const yesterday = today.subtract(1, "day")
 
         let label: string
-        if (d.isAfter(today)) {
-            label = "Today"
-        } else if (d.isAfter(yesterday)) {
-            label = "Yesterday"
+        if (d.isSame(today, "day")) {
+            label = todayLabel
+        } else if (d.isSame(yesterday, "day")) {
+            label = yesterdayLabel
         } else {
-            label = d.format("MMMM D, YYYY")
+            label = d.toDate().toLocaleDateString(locale, { year: "numeric", month: "long", day: "numeric" })
         }
 
         if (!groups[label]) {
@@ -42,16 +43,17 @@ function groupByDate(entries: CalculationEntry[]): Section[] {
 export default function HistoryDrawerContent({ onClose }: { onClose?: () => void }) {
     const [sections, setSections] = useState<Section[]>([])
     const { onSelect, refreshKey } = useContext(HistoryContext)
+    const { locale, t } = useI18n()
 
     useEffect(() => {
-        getHistory().then((entries) => setSections(groupByDate(entries)))
-    }, [refreshKey])
+        getHistory().then((entries) => setSections(groupByDate(entries, locale === "en" ? "en-US" : locale, t("history.today"), t("history.yesterday"))))
+    }, [locale, refreshKey, t])
 
     const handleClear = () => {
-        Alert.alert("Clear History", "Remove all calculation history?", [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert(t("history.clearTitle"), t("history.clearMessage"), [
+            { text: t("common.cancel"), style: "cancel" },
             {
-                text: "Clear",
+                text: t("history.clear"),
                 style: "destructive",
                 onPress: async () => {
                     await clearHistory()
@@ -78,7 +80,7 @@ export default function HistoryDrawerContent({ onClose }: { onClose?: () => void
         <SafeAreaView style={styles.container} edges={["bottom"]}>
             <View style={styles.handle} />
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>History</Text>
+                <Text style={styles.headerTitle}>{t("history.title")}</Text>
                 {onClose && (
                     <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.6}>
                         <LucideIcon name="x" size={22} color="#888" />
@@ -89,7 +91,7 @@ export default function HistoryDrawerContent({ onClose }: { onClose?: () => void
             {sections.length === 0 ? (
                 <View style={styles.empty}>
                     <LucideIcon name="clock" size={48} color="#555" />
-                    <Text style={styles.emptyText}>No calculations yet</Text>
+                    <Text style={styles.emptyText}>{t("history.empty")}</Text>
                 </View>
             ) : (
                 <>
@@ -103,7 +105,7 @@ export default function HistoryDrawerContent({ onClose }: { onClose?: () => void
                     />
                     <TouchableOpacity style={styles.clearButton} onPress={handleClear} activeOpacity={0.7}>
                         <LucideIcon name="trash-2" size={18} color="#ff4444" />
-                        <Text style={styles.clearText}>Clear History</Text>
+                        <Text style={styles.clearText}>{t("history.clear")}</Text>
                     </TouchableOpacity>
                 </>
             )}

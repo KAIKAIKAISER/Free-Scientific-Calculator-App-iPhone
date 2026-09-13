@@ -32,5 +32,11 @@ yarn-error.*
 .env*.local
 .env
 
+# Generated iOS build output
+ios/build/
+
+# Signing and credentials
+credentials.json
+
 # typescript
 *.tsbuildinfo

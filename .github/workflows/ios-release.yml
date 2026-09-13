@@ -1,0 +1,73 @@
+name: iOS Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, for example v0.1.0"
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run ts:check
+
+      - name: Generate native iOS project
+        run: npx expo prebuild --platform ios --non-interactive
+
+      - name: Install CocoaPods dependencies
+        working-directory: ios
+        run: pod install
+        env:
+          COCOAPODS_DISABLE_STATS: true
+
+      - name: Build unsigned iOS app
+        run: |
+          xcodebuild \
+            -workspace ios/ConvCalc.xcworkspace \
+            -scheme ConvCalc \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+
+      - name: Package release IPA
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          rm -rf Payload Calculator-${RELEASE_TAG}.ipa
+          mkdir Payload
+          cp -R ios/build/Build/Products/Release-iphoneos/ConvCalc.app Payload/ConvCalc.app
+          ditto -c -k --norsrc Payload Calculator-${RELEASE_TAG}.ipa
+
+      - name: Create GitHub Release and upload IPA
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: ConvCalc ${{ inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: Calculator-${{ inputs.tag || github.ref_name }}.ipa

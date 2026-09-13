@@ -2,10 +2,10 @@
   "expo": {
     "name": "ConvCalc",
     "slug": "CalculatorApp",
-    "version": "1.0.6",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -18,8 +18,9 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.qualtir.convcalc",
-      "buildNumber": "20",
-      "runtimeVersion": "1.0.0"
+      "buildNumber": "1",
+      "deploymentTarget": "15.1",
+      "runtimeVersion": "0.1.0"
     },
     "android": {
       "adaptiveIcon": {

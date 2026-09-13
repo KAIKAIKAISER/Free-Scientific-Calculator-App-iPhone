@@ -1,6 +1,7 @@
 import React from "react"
 import { Text, TouchableOpacity, View, StyleSheet, Dimensions } from "react-native"
 import { ConverterTool } from "../data/converterTools"
+import { toolLabelKey, useI18n } from "../i18n"
 import { hapticFeedback } from "../utils"
 import LucideIcon from "./LucideIcon"
 
@@ -15,22 +16,25 @@ type Props = {
     delayLongPress?: number
 }
 
-export default ({ tool, onPress, onLongPress, onPressOut, delayLongPress = 300 }: Props) => (
-    <TouchableOpacity
-        style={styles.card}
-        onPressIn={hapticFeedback}
-        onPress={onPress}
-        onLongPress={onLongPress}
-        onPressOut={onPressOut}
-        delayLongPress={delayLongPress}
-        activeOpacity={0.7}
-    >
-        <View style={styles.iconContainer}>
-            <LucideIcon name={tool.icon} size={28} color="white" />
-        </View>
-        <Text style={styles.label}>{tool.label}</Text>
-    </TouchableOpacity>
-)
+export default ({ tool, onPress, onLongPress, onPressOut, delayLongPress = 300 }: Props) => {
+    const { t } = useI18n()
+    return (
+        <TouchableOpacity
+            style={styles.card}
+            onPressIn={hapticFeedback}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            onPressOut={onPressOut}
+            delayLongPress={delayLongPress}
+            activeOpacity={0.7}
+        >
+            <View style={styles.iconContainer}>
+                <LucideIcon name={tool.icon} size={28} color="white" />
+            </View>
+            <Text style={styles.label}>{t(toolLabelKey(tool.key, tool.label))}</Text>
+        </TouchableOpacity>
+    )
+}
 
 const styles = StyleSheet.create({
     card: {
