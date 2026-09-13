@@ -66,6 +66,7 @@ export default function Currency({ onBack, onOpenTools }: Props = {}) {
     const [rates, setRates] = useState<RatesResult | null>(null)
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [rateFetchFailed, setRateFetchFailed] = useState(false)
+    const [preferencesReady, setPreferencesReady] = useState(false)
     const [pickerVisible, setPickerVisible] = useState(false)
     const [pickerMode, setPickerMode] = useState<"replace" | "add">("replace")
     const [searchText, setSearchText] = useState("")
@@ -89,21 +90,27 @@ export default function Currency({ onBack, onOpenTools }: Props = {}) {
     }, [displayedCurrencies])
 
     useEffect(() => {
-        void AsyncStorage.multiGet([CURRENCY_KEY, FAVORITES_KEY]).then(([displayed, savedFavorites]) => {
-            setDisplayedCurrencies(safeDisplayedCodes(displayed[1]))
-            if (savedFavorites[1]) {
-                try {
-                    const parsed: unknown = JSON.parse(savedFavorites[1])
-                    if (Array.isArray(parsed)) setFavorites(parsed.filter((code): code is string => typeof code === "string" && !!currencies[code]))
-                } catch { /* ignore malformed local preferences */ }
-            }
-        })
-        void loadRates()
-    }, [loadRates])
+        void AsyncStorage.multiGet([CURRENCY_KEY, FAVORITES_KEY])
+            .then(([displayed, savedFavorites]) => {
+                setDisplayedCurrencies(safeDisplayedCodes(displayed[1]))
+                if (savedFavorites[1]) {
+                    try {
+                        const parsed: unknown = JSON.parse(savedFavorites[1])
+                        if (Array.isArray(parsed)) setFavorites(parsed.filter((code): code is string => typeof code === "string" && /^[A-Z]{3}$/.test(code.toUpperCase())).map((code) => code.toUpperCase()))
+                    } catch { /* ignore malformed local preferences */ }
+                }
+            })
+            .catch(() => undefined)
+            .finally(() => setPreferencesReady(true))
+    }, [])
 
     useEffect(() => {
-        void AsyncStorage.setItem(CURRENCY_KEY, JSON.stringify(displayedCurrencies))
-    }, [displayedCurrencies])
+        if (preferencesReady) void loadRates()
+    }, [loadRates, preferencesReady])
+
+    useEffect(() => {
+        if (preferencesReady) void AsyncStorage.setItem(CURRENCY_KEY, JSON.stringify(displayedCurrencies))
+    }, [displayedCurrencies, preferencesReady])
 
     const amounts = useMemo(() => {
         const activeCode = displayedCurrencies[activeCurrencyIndex]
@@ -234,8 +241,9 @@ export default function Currency({ onBack, onOpenTools }: Props = {}) {
                         <LucideIcon name="grid-3x3" size={16} color={colors.secondaryText} />
                     </TouchableOpacity>
                     <Text style={[styles.title, { color: colors.text }]}>{t("currency.title")}</Text>
-                    <TouchableOpacity onPress={() => openPicker("add")} style={styles.iconButton} accessibilityLabel={t("currency.add")}>
-                        <LucideIcon name="plus" size={20} color={colors.accent} />
+                    <TouchableOpacity onPress={() => openPicker("add")} style={[styles.addButton, { backgroundColor: colors.accentSurface, borderColor: colors.accent }]} accessibilityLabel={t("currency.add")}>
+                        <LucideIcon name="plus" size={17} color={colors.accent} />
+                        <Text style={[styles.addButtonText, { color: colors.accent }]}>{t("currency.add")}</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -407,10 +415,11 @@ function CurrencyPicker({ visible, searchText, favorites, locale, t, onSearch, o
 const styles = StyleSheet.create({
     container: { flex: 1, width: "100%" },
     currencySurface: { flex: 1, width: "100%", borderTopLeftRadius: 8, borderTopRightRadius: 8, overflow: "hidden" },
-    header: { height: CURRENCY_HEADER_HEIGHT, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 30, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(120,120,120,0.4)" },
-    menuButton: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, justifyContent: "center", alignItems: "center", transform: [{ translateY: 7 }] },
-    iconButton: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center" },
-    title: { fontSize: 20, fontWeight: "500" },
+    header: { height: CURRENCY_HEADER_HEIGHT, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(120,120,120,0.4)" },
+    menuButton: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, justifyContent: "center", alignItems: "center" },
+    title: { flex: 1, textAlign: "center", fontSize: 20, fontWeight: "500" },
+    addButton: { minWidth: 42, height: 36, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 10, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 },
+    addButtonText: { fontSize: 13, fontWeight: "500" },
     currencyList: { flex: 1 },
     currencyListContent: { paddingBottom: 0 },
     currencyRow: { height: CURRENCY_ROW_HEIGHT, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 30 },
