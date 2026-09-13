@@ -9,9 +9,10 @@ import { create, all } from "mathjs"
 import { hapticFeedback, hapticFeedbackSwitch, hapticSuccess } from "../utils"
 import Button from "../components/Button"
 import LucideIcon from "../components/LucideIcon"
-import { saveCalculation } from "../utils/historyStorage"
+import { clearHistory, saveCalculation } from "../utils/historyStorage"
 import { CalcCallbackContext, HistoryContext } from "../../App"
 import { useI18n } from "../i18n"
+import { useTheme } from "../theme"
 
 const config = {}
 const MathJS = create(all, config)
@@ -23,10 +24,15 @@ const { width: screenWidth } = Dimensions.get("window")
 const BUTTON_SIZE = (screenWidth - 40) / 4
 const EXPANDED_BUTTON_SIZE = (screenWidth - 40) / 5
 
-const App = () => {
+type Props = {
+    onOpenTools?: () => void
+}
+
+const App = ({ onOpenTools }: Props) => {
     const { setOnSelect, bumpRefreshKey } = useContext(CalcCallbackContext)
     const { openHistory } = useContext(HistoryContext)
     const { t } = useI18n()
+    const { colors, isDark, toggleTheme } = useTheme()
     const [currentInput, setCurrentInput] = useState("")
     const [history, setHistory] = useState([])
     const [selectedChunk, setSelectedChunk] = useState(-1)
@@ -70,8 +76,14 @@ const App = () => {
     const computeTempResult = () => {
         try {
             const result = evaluateInput(currentInput)
-            if (result) setTempResult(String(result))
-        } catch (error) {}
+            if (result !== undefined && result !== null && result !== "") {
+                setTempResult(String(result))
+            } else {
+                setTempResult("")
+            }
+        } catch (error) {
+            setTempResult("")
+        }
     }
 
     const formatChunk = (chunk) => {
@@ -80,25 +92,26 @@ const App = () => {
             return chunk.replace(".", Localization.getLocales()[0].decimalSeparator ?? ".")
         }
 
+        if (!/^-?(?:\d+(?:\.\d*)?|\.\d+)$/.test(chunk)) return chunk
+
         const formatted = new Intl.NumberFormat(Localization.getLocales()[0]?.languageTag ?? "en-US", {
             maximumFractionDigits: 5,
             useGrouping: true
-        }).format(chunk)
-
-        if (formatted === "NaN") return chunk
+        }).format(Number(chunk))
 
         return formatted
     }
 
     const formatResult = (result) => {
         if (result === "") return result
+        const numericResult = Number(result)
+        if (!Number.isFinite(numericResult)) return result
 
         const formatted = new Intl.NumberFormat(Localization.getLocales()[0]?.languageTag ?? "en-US", {
             maximumFractionDigits: 5,
             useGrouping: true
-        }).format(result)
+        }).format(numericResult)
 
-        if (formatted === "NaN") return result
         return formatted
     }
 
@@ -149,8 +162,18 @@ const App = () => {
         setCurrentInput("")
         setTempResult("")
         setError("")
-        if (!currentInput) setHistory([])
         setSelectedChunk(-1)
+    }
+
+    const handleClearAll = () => {
+        hapticFeedbackSwitch()
+        resetChunkFontSize()
+        setCurrentInput("")
+        setTempResult("")
+        setError("")
+        setHistory([])
+        setSelectedChunk(-1)
+        void clearHistory().then(() => bumpRefreshKey())
     }
 
     const resetChunkFontSize = () => {
@@ -164,8 +187,9 @@ const App = () => {
     }
 
     const evaluateInput = (input) => {
+        const normalizedInput = input.replaceAll("×", "*").replaceAll("÷", "/")
         // parse input to replace trigonometric functions values with deg or rad based on the isRadian state
-        const parsedInput = input.replace(
+        const parsedInput = normalizedInput.replace(
             new RegExp(`(sin|cos|tan)\\(([^)]+)\\)`, "g"),
             (match, func, value) => `${func}((${value}) ${isRadian ? "rad" : "deg"})`
         )
@@ -344,7 +368,7 @@ const App = () => {
     ]
 
     const renderInput = () => {
-        if (error) return <Text style={styles.inputText}>{error}</Text>
+        if (error) return <Text style={[styles.inputText, { color: colors.accent }]}>{error}</Text>
 
         return (
             <>
@@ -356,7 +380,7 @@ const App = () => {
                                 style={[
                                     styles.chunk,
                                     { height: chunkFontSize + 15 },
-                                    selectedChunk === index && styles.selectedChunk
+                                    selectedChunk === index && [styles.selectedChunk, { backgroundColor: colors.selection }]
                                 ]}
                                 onLongPress={() => handleCopy(chunk)}
                                 onPress={() => {
@@ -375,6 +399,7 @@ const App = () => {
                                 <Text
                                     style={[
                                         styles.inputText,
+                                        { color: colors.text },
                                         { fontSize: chunkFontSize, lineHeight: chunkFontSize + 4 }
                                     ]}
                                 >
@@ -392,14 +417,14 @@ const App = () => {
                         onPressIn={hapticFeedback}
                         onPress={handleBackspace}
                     >
-                        <Text style={styles.backspaceText}>⌫</Text>
+                        <Text style={[styles.backspaceText, { color: colors.secondaryText }]}>⌫</Text>
                     </TouchableOpacity>
                 )}
 
                 {/* Default to 0 */}
                 {!currentInput && (
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.inputText} onLongPress={openClipboardMenu}>
+                        <Text style={[styles.inputText, { color: colors.text }]} onLongPress={openClipboardMenu}>
                             0
                         </Text>
                     </View>
@@ -409,7 +434,7 @@ const App = () => {
                 {isClipboardMenuVisible && (
                     <View style={styles.clipboardMenuContainer}>
                         <TouchableOpacity style={styles.clipboardMenu} onPress={pasteClipboard}>
-                            <Text style={styles.clipboardMenuText}>{t("calculator.paste")}</Text>
+                            <Text style={[styles.clipboardMenuText, { color: colors.text }]}>{t("calculator.paste")}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -425,11 +450,26 @@ const App = () => {
     const insets = useSafeAreaInsets()
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
-                <TouchableOpacity style={[styles.historyButton, { top: insets.top + 4 }]} onPress={openHistoryDrawer} activeOpacity={0.6}>
-                    <LucideIcon name="clock" size={22} color="#888" />
-                </TouchableOpacity>
+                <View style={[styles.topBar, { top: insets.top + 4 }]}>
+                    <TouchableOpacity style={[styles.toolbarButton, { backgroundColor: colors.overlay }]} onPress={openHistoryDrawer} activeOpacity={0.6} accessibilityLabel={t("history.title")}>
+                        <LucideIcon name="clock" size={19} color={colors.secondaryText} />
+                    </TouchableOpacity>
+                    <View style={styles.topBarActions}>
+                        <TouchableOpacity style={[styles.toolbarButton, { backgroundColor: colors.overlay }]} onPress={handleClearAll} activeOpacity={0.6} accessibilityLabel={t("calculator.clearAll")}>
+                            <LucideIcon name="trash-2" size={18} color={colors.accent} />
+                        </TouchableOpacity>
+                        {onOpenTools && (
+                            <TouchableOpacity style={[styles.toolbarButton, { backgroundColor: colors.overlay }]} onPress={onOpenTools} activeOpacity={0.6} accessibilityLabel={t("calculator.openTools")}>
+                                <LucideIcon name="layout-grid" size={19} color={colors.accent} />
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity style={[styles.toolbarButton, { backgroundColor: colors.overlay }]} onPress={toggleTheme} activeOpacity={0.6} accessibilityLabel={isDark ? t("calculator.lightMode") : t("calculator.darkMode")}>
+                            <LucideIcon name={isDark ? "sun" : "moon"} size={19} color={colors.accent} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
                 <View style={styles.historyContainer} onTouchStart={() => setSelectedChunk(-1)}>
                     <ScrollView
                         contentContainerStyle={{ padding: 10, alignItems: "flex-end" }}
@@ -442,7 +482,7 @@ const App = () => {
                                 onLongPress={() => handleHistoryCopy(result)}
                                 onPress={() => handleHistoryClick(result)}
                             >
-                                <Text style={styles.historyText}>{result}</Text>
+                                <Text style={[styles.historyText, { color: colors.secondaryText }]}>{result}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
@@ -451,7 +491,7 @@ const App = () => {
                 <View style={styles.inputContainer}>{renderInput()}</View>
 
                 {currentInput && tempResult && (
-                    <Text style={styles.temporaryResultText}>= {formatResult(tempResult)}</Text>
+                    <Text style={[styles.temporaryResultText, { color: colors.secondaryText }]}>= {formatResult(tempResult)}</Text>
                 )}
             </View>
 
@@ -495,15 +535,24 @@ const styles = StyleSheet.create({
     header: {
         flex: 1
     },
-    historyButton: {
+    topBar: {
         position: "absolute",
         top: 0,
+        left: 16,
         right: 16,
         zIndex: 10,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    topBarActions: {
+        flexDirection: "row",
+        gap: 8,
+    },
+    toolbarButton: {
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: "rgba(255,255,255,0.1)",
         justifyContent: "center",
         alignItems: "center",
     },
@@ -571,7 +620,6 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end",
         width: "100%",
         paddingRight: 40,
-        backgroundColor: "black",
         height: "auto",
         flexWrap: "wrap"
     },

@@ -1,29 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import {
-    ActivityIndicator,
-    Dimensions,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native"
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import Button from "../components/Button"
 import CurrencyFlag from "../components/CurrencyFlag"
 import LucideIcon from "../components/LucideIcon"
 import { currencies, getCurrency, popularCurrencyCodes } from "../data/currencies"
 import { useI18n } from "../i18n"
 import { getExchangeRates, refreshExchangeRates, RatesResult } from "../services/exchangeRate"
-import { hapticFeedback, hapticFeedbackSwitch } from "../utils"
-
-const { width: screenWidth } = Dimensions.get("window")
-const BUTTON_SIZE = (screenWidth - 40) / 4
+import { useTheme } from "../theme"
 const CURRENCY_KEY = "currency.displayed"
 const FAVORITES_KEY = "currency.favorites"
 const DEFAULT_CURRENCIES = ["CNY", "USD", "JPY", "EUR", "HKD", "TWD"]
@@ -53,10 +38,10 @@ function safeDisplayedCodes(value: string | null) {
 
 export default function Currency({ onBack }: Props = {}) {
     const { locale, t } = useI18n()
+    const { colors } = useTheme()
     const [displayedCurrencies, setDisplayedCurrencies] = useState(DEFAULT_CURRENCIES)
     const [activeCurrencyIndex, setActiveCurrencyIndex] = useState(0)
     const [activeAmount, setActiveAmount] = useState("1")
-    const [inputEdited, setInputEdited] = useState(false)
     const [rates, setRates] = useState<RatesResult | null>(null)
     const [isRefreshing, setIsRefreshing] = useState(false)
     const [rateFetchFailed, setRateFetchFailed] = useState(false)
@@ -165,29 +150,18 @@ export default function Currency({ onBack }: Props = {}) {
         })
     }
 
-    const appendValue = (value: string) => {
+    const handleAmountChange = (value: string) => {
         const activeCode = displayedCurrencies[activeCurrencyIndex]
-        if (value === "." && getCurrency(activeCode).decimals === 0) return
-        setInputEdited(true)
-        if (!inputEdited) return setActiveAmount(value === "." ? "0." : value)
-        if (value === "." && activeAmount.includes(".")) return
-        setActiveAmount(activeAmount === "0" && value !== "." ? value : activeAmount + value)
-    }
-
-    const clear = () => {
-        setInputEdited(true)
-        setActiveAmount("0")
-    }
-
-    const backspace = () => {
-        setInputEdited(true)
-        setActiveAmount((current) => current.length <= 1 ? "0" : current.slice(0, -1))
+        const decimals = getCurrency(activeCode).decimals
+        let next = value.replaceAll(",", ".").replace(/[^0-9.-]/g, "")
+        if (next.includes("-")) next = `${next.startsWith("-") ? "-" : ""}${next.replaceAll("-", "")}`
+        if (decimals === 0 && next.includes(".")) next = next.split(".")[0]
+        setActiveAmount(next)
     }
 
     const changeActiveCurrency = (index: number) => {
         setActiveCurrencyIndex(index)
-        setActiveAmount(formatAmount(displayedCurrencies[index], amounts[index] ?? 0, locale).replaceAll(",", ""))
-        setInputEdited(false)
+        setActiveAmount(String(amounts[index] ?? 0))
     }
 
     const updatedLabel = rates?.updatedAt
@@ -204,16 +178,16 @@ export default function Currency({ onBack }: Props = {}) {
             : rateFetchFailed ? t("currency.noRates") : t("currency.tapToLoad")
 
     return (
-        <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["bottom", "left", "right"]}>
             <View style={styles.header}>
                 {onBack ? (
                     <TouchableOpacity onPress={onBack} style={styles.iconButton} accessibilityLabel={t("common.back")}>
-                        <LucideIcon name="chevron-left" size={20} color="white" />
+                        <LucideIcon name="chevron-left" size={20} color={colors.text} />
                     </TouchableOpacity>
                 ) : <View style={styles.headerSpacer} />}
-                <Text style={styles.title}>{t("currency.title")}</Text>
+                <Text style={[styles.title, { color: colors.text }]}>{t("currency.title")}</Text>
                 <TouchableOpacity onPress={() => openPicker("add")} style={styles.iconButton} accessibilityLabel={t("currency.add")}>
-                    <LucideIcon name="plus" size={20} color="#F69A06" />
+                    <LucideIcon name="plus" size={20} color={colors.accent} />
                 </TouchableOpacity>
             </View>
 
@@ -221,51 +195,54 @@ export default function Currency({ onBack }: Props = {}) {
                 {displayedCurrencies.map((code, index) => {
                     const currency = getCurrency(code)
                     const active = index === activeCurrencyIndex
-                    const displayValue = active && activeAmount.endsWith(".") ? activeAmount : formatAmount(code, amounts[index] ?? 0, locale)
+                    const displayValue = formatAmount(code, amounts[index] ?? 0, locale)
                     return (
-                        <View style={[styles.currencyRow, active && styles.currencyRowActive]} key={`${code}-${index}`}>
+                        <View style={[styles.currencyRow, active && [styles.currencyRowActive, { backgroundColor: colors.elevated }]]} key={`${code}-${index}`}>
                             <TouchableOpacity style={styles.currencySelector} onPress={() => { setActiveCurrencyIndex(index); openPicker("replace") }} onLongPress={() => toggleFavorite(code)}>
                                 <CurrencyFlag region={currency.region} emoji={currency.flag} />
                                 <View style={styles.currencyIdentity}>
-                                    <Text style={styles.currencyCode}>{code}</Text>
-                                    <Text style={styles.currencyName}>{currency.name[locale]}</Text>
+                                    <Text style={[styles.currencyCode, { color: colors.text }]}>{code}</Text>
+                                    <Text style={[styles.currencyName, { color: colors.secondaryText }]}>{currency.name[locale]}</Text>
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.amountButton} onPress={() => changeActiveCurrency(index)}>
-                                <Text style={[styles.amount, active && styles.amountActive]} numberOfLines={1}>{displayValue}</Text>
-                                <Text style={styles.symbol}>{currency.symbol}</Text>
-                            </TouchableOpacity>
+                            <View style={styles.amountButton}>
+                                {active ? (
+                                    <TextInput
+                                        style={[styles.amount, styles.amountInput, { color: colors.accent }]}
+                                        value={activeAmount}
+                                        onChangeText={handleAmountChange}
+                                        keyboardType={currency.decimals === 0 ? "number-pad" : "decimal-pad"}
+                                        selectTextOnFocus
+                                        returnKeyType="done"
+                                        accessibilityLabel={`${currency.name[locale]} ${t("common.amount")}`}
+                                    />
+                                ) : (
+                                    <TouchableOpacity onPress={() => changeActiveCurrency(index)}>
+                                        <Text style={[styles.amount, { color: colors.text }]} numberOfLines={1}>{displayValue}</Text>
+                                    </TouchableOpacity>
+                                )}
+                                <Text style={[styles.symbol, { color: colors.tertiaryText }]}>{currency.symbol}</Text>
+                            </View>
                             <View style={styles.rowActions}>
-                                <TouchableOpacity onPress={() => moveCurrency(index, -1)} disabled={index === 0} style={styles.rowAction}><Text style={[styles.rowActionText, index === 0 && styles.disabled]}>↑</Text></TouchableOpacity>
-                                <TouchableOpacity onPress={() => moveCurrency(index, 1)} disabled={index === displayedCurrencies.length - 1} style={styles.rowAction}><Text style={[styles.rowActionText, index === displayedCurrencies.length - 1 && styles.disabled]}>↓</Text></TouchableOpacity>
-                                <TouchableOpacity onPress={() => removeCurrency(index)} disabled={displayedCurrencies.length <= 1} style={styles.rowAction}><Text style={[styles.rowActionText, styles.removeText, displayedCurrencies.length <= 1 && styles.disabled]}>×</Text></TouchableOpacity>
+                                <TouchableOpacity onPress={() => moveCurrency(index, -1)} disabled={index === 0} style={styles.rowAction}><Text style={[styles.rowActionText, { color: colors.secondaryText }, index === 0 && styles.disabled]}>↑</Text></TouchableOpacity>
+                                <TouchableOpacity onPress={() => moveCurrency(index, 1)} disabled={index === displayedCurrencies.length - 1} style={styles.rowAction}><Text style={[styles.rowActionText, { color: colors.secondaryText }, index === displayedCurrencies.length - 1 && styles.disabled]}>↓</Text></TouchableOpacity>
+                                <TouchableOpacity onPress={() => removeCurrency(index)} disabled={displayedCurrencies.length <= 1} style={styles.rowAction}><Text style={[styles.rowActionText, { color: "#d66" }, displayedCurrencies.length <= 1 && styles.disabled]}>×</Text></TouchableOpacity>
                             </View>
                         </View>
                     )
                 })}
                 <TouchableOpacity style={styles.addCurrencyButton} onPress={() => openPicker("add")}>
-                    <LucideIcon name="plus" size={18} color="#F69A06" />
-                    <Text style={styles.addCurrencyText}>{t("currency.add")}</Text>
+                    <LucideIcon name="plus" size={18} color={colors.accent} />
+                    <Text style={[styles.addCurrencyText, { color: colors.accent }]}>{t("currency.add")}</Text>
                 </TouchableOpacity>
             </ScrollView>
 
             <TouchableOpacity style={styles.statusButton} onPress={() => void loadRates(true)} disabled={isRefreshing}>
-                {isRefreshing && <ActivityIndicator size="small" color="#888" />}
-                <Text style={styles.statusText}>{rateStatus}</Text>
-                {!isRefreshing && <Text style={styles.sourceText}>{t("currency.rateSource")}</Text>}
+                {isRefreshing && <ActivityIndicator size="small" color={colors.secondaryText} />}
+                <Text style={[styles.statusText, { color: colors.secondaryText }]}>{rateStatus}</Text>
+                {!isRefreshing && <Text style={[styles.sourceText, { color: colors.tertiaryText }]}>{t("currency.rateSource")}</Text>}
             </TouchableOpacity>
-
-            <View style={styles.keyboard}>
-                <View style={styles.numberButtons}>
-                    {["9", "8", "7", "6", "5", "4", "3", "2", "1", ".", "0"].map((value) => (
-                        <View style={styles.keyWrapper} key={value}><Button type="number" theme="default" value={value} onPress={() => appendValue(value)} /></View>
-                    ))}
-                </View>
-                <View style={styles.actionButtons}>
-                    <View style={styles.actionButtonWrapper}><TouchableOpacity style={styles.actionButton} onPressIn={hapticFeedbackSwitch} onPress={clear}><Text style={styles.clearText}>AC</Text></TouchableOpacity></View>
-                    <View style={styles.actionButtonWrapper}><TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPressIn={hapticFeedback} onPress={backspace}><Text style={styles.deleteText}>⌫</Text></TouchableOpacity></View>
-                </View>
-            </View>
+            <Text style={[styles.inputHint, { color: colors.tertiaryText }]}>{t("currency.inputHint")}</Text>
 
             <CurrencyPicker visible={pickerVisible} searchText={searchText} favorites={favorites} locale={locale} t={t} onSearch={setSearchText} onClose={() => setPickerVisible(false)} onSelect={selectCurrency} onToggleFavorite={toggleFavorite} />
         </SafeAreaView>
@@ -285,6 +262,7 @@ type PickerProps = {
 }
 
 function CurrencyPicker({ visible, searchText, favorites, locale, t, onSearch, onClose, onSelect, onToggleFavorite }: PickerProps) {
+    const { colors } = useTheme()
     const filteredCodes = useMemo(() => {
         const query = searchText.trim().toLocaleLowerCase(localeTag(locale))
         return popularCurrencyCodes
@@ -299,26 +277,26 @@ function CurrencyPicker({ visible, searchText, favorites, locale, t, onSearch, o
         <Modal animationType="slide" visible={visible} transparent presentationStyle="formSheet" onRequestClose={onClose}>
             <View style={styles.modalView}>
                 <Pressable style={styles.dismissArea} onPress={onClose} />
-                <View style={styles.currencyPicker}>
+                <View style={[styles.currencyPicker, { backgroundColor: colors.surface }]}>
                     <View style={styles.pickerHeader}>
-                        <Text style={styles.pickerTitle}>{t("currency.add")}</Text>
-                        <TouchableOpacity onPress={onClose}><Text style={styles.doneText}>{t("common.done")}</Text></TouchableOpacity>
+                        <Text style={[styles.pickerTitle, { color: colors.text }]}>{t("currency.add")}</Text>
+                        <TouchableOpacity onPress={onClose}><Text style={[styles.doneText, { color: colors.accent }]}>{t("common.done")}</Text></TouchableOpacity>
                     </View>
-                    <TextInput style={styles.searchBar} placeholder={t("currency.searchPlaceholder")} placeholderTextColor="#777" clearButtonMode="while-editing" value={searchText} onChangeText={onSearch} autoCorrect={false} autoCapitalize="characters" />
+                    <TextInput style={[styles.searchBar, { backgroundColor: colors.elevated, color: colors.text }]} placeholder={t("currency.searchPlaceholder")} placeholderTextColor={colors.tertiaryText} clearButtonMode="while-editing" value={searchText} onChangeText={onSearch} autoCorrect={false} autoCapitalize="characters" />
                     <ScrollView style={styles.pickerList} keyboardShouldPersistTaps="handled">
                         {filteredCodes.length ? filteredCodes.map((code) => {
                             const item = getCurrency(code)
                             const favorite = favorites.includes(code)
                             return (
-                                <View style={styles.pickerRow} key={code}>
+                                <View style={[styles.pickerRow, { borderBottomColor: colors.border }]} key={code}>
                                     <TouchableOpacity style={styles.pickerSelect} onPress={() => onSelect(code)}>
                                         <CurrencyFlag region={item.region} emoji={item.flag} size={24} />
-                                        <View style={styles.currencyIdentity}><Text style={styles.pickerCode}>{code} · {item.symbol}</Text><Text style={styles.pickerName}>{item.name[locale]} · {item.regionName[locale]}</Text></View>
+                                        <View style={styles.currencyIdentity}><Text style={[styles.pickerCode, { color: colors.text }]}>{code} · {item.symbol}</Text><Text style={[styles.pickerName, { color: colors.secondaryText }]}>{item.name[locale]} · {item.regionName[locale]}</Text></View>
                                     </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => onToggleFavorite(code)} accessibilityLabel={t("currency.favorite")}><Text style={[styles.favorite, favorite && styles.favoriteActive]}>{favorite ? "★" : "☆"}</Text></TouchableOpacity>
+                                    <TouchableOpacity onPress={() => onToggleFavorite(code)} accessibilityLabel={t("currency.favorite")}><Text style={[styles.favorite, { color: colors.secondaryText }, favorite && { color: colors.accent }]}>{favorite ? "★" : "☆"}</Text></TouchableOpacity>
                                 </View>
                             )
-                        }) : <Text style={styles.noResults}>{t("currency.noResults")}</Text>}
+                        }) : <Text style={[styles.noResults, { color: colors.secondaryText }]}>{t("currency.noResults")}</Text>}
                     </ScrollView>
                 </View>
             </View>
@@ -341,7 +319,8 @@ const styles = StyleSheet.create({
     currencyCode: { color: "white", fontSize: 18, fontWeight: "600" },
     currencyName: { color: "#888", fontSize: 13, marginTop: 2 },
     amountButton: { alignItems: "flex-end", maxWidth: "43%" },
-    amount: { color: "white", fontSize: 24, fontWeight: "500" },
+    amount: { color: "white", fontSize: 24, fontWeight: "500", textAlign: "right" },
+    amountInput: { minWidth: 110, paddingVertical: 0, paddingHorizontal: 0 },
     amountActive: { color: "#F69A06" },
     symbol: { color: "#777", fontSize: 13, marginTop: 1 },
     rowActions: { flexDirection: "row", marginLeft: 6 },
@@ -354,15 +333,7 @@ const styles = StyleSheet.create({
     statusButton: { minHeight: 42, alignItems: "center", justifyContent: "center", paddingHorizontal: 16, gap: 2 },
     statusText: { color: "#777", fontSize: 12, textAlign: "center" },
     sourceText: { color: "#444", fontSize: 10 },
-    keyboard: { height: BUTTON_SIZE * 4, width: screenWidth, flexDirection: "row", justifyContent: "center", alignItems: "center", paddingHorizontal: 10 },
-    numberButtons: { height: BUTTON_SIZE * 4, width: BUTTON_SIZE * 3, flexDirection: "row-reverse", flexWrap: "wrap" },
-    keyWrapper: { width: BUTTON_SIZE, height: BUTTON_SIZE, padding: 5 },
-    actionButtons: { height: BUTTON_SIZE * 4, width: BUTTON_SIZE },
-    actionButtonWrapper: { padding: 5, height: BUTTON_SIZE * 2, width: BUTTON_SIZE },
-    actionButton: { width: "100%", height: "100%", borderRadius: 25, backgroundColor: "#3E2702", justifyContent: "center", alignItems: "center" },
-    deleteButton: { backgroundColor: "#F69A06" },
-    clearText: { color: "#BF7600", fontSize: 30 },
-    deleteText: { color: "white", fontSize: 35 },
+    inputHint: { textAlign: "center", fontSize: 12, paddingHorizontal: 16, paddingBottom: 12 },
     modalView: { flex: 1 },
     dismissArea: { flex: 1 },
     currencyPicker: { height: "80%", marginTop: "auto", backgroundColor: "#222", borderTopRightRadius: 20, borderTopLeftRadius: 20, padding: 20, alignItems: "center" },

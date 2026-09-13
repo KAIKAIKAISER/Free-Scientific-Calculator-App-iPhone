@@ -3,6 +3,7 @@ import { Animated, View, StyleSheet, Dimensions } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { converterTools } from "../data/converterTools"
 import LucideIcon from "./LucideIcon"
+import { useTheme } from "../theme"
 
 const { width } = Dimensions.get("window")
 const ICON_SIZE = 20
@@ -20,8 +21,9 @@ type Props = {
 }
 
 export default ({ screenOrder, scrollX, opacity }: Props) => {
-    if (screenOrder.length === 0) return null
+    const { colors } = useTheme()
     const insets = useSafeAreaInsets()
+    if (screenOrder.length === 0) return null
 
     const allTabs = [
         ...screenOrder.map((key, i) => ({ key, icon: iconForKey(key), screenIndex: i })),
@@ -30,7 +32,7 @@ export default ({ screenOrder, scrollX, opacity }: Props) => {
 
     return (
         <Animated.View style={[styles.container, { opacity, paddingTop: insets.top + 4 }]} pointerEvents="none">
-            <View style={styles.tabRow}>
+            <View style={[styles.tabRow, { backgroundColor: colors.surface }]}>
                 {allTabs.map((tab) => {
                     const tabCenter = tab.screenIndex * width
                     const activity = scrollX.interpolate({
@@ -49,10 +51,10 @@ export default ({ screenOrder, scrollX, opacity }: Props) => {
                             <View style={styles.tabContent}>
                                 <View style={styles.iconWrapper}>
                                     <Animated.View style={{ opacity: inactiveIconOpacity }}>
-                                        <LucideIcon name={tab.icon} size={ICON_SIZE} color="#555" />
+                                        <LucideIcon name={tab.icon} size={ICON_SIZE} color={colors.tertiaryText} />
                                     </Animated.View>
                                     <Animated.View style={[styles.iconOverlay, { opacity: activeIconOpacity }]}>
-                                        <LucideIcon name={tab.icon} size={ICON_SIZE} color="#fff" />
+                                        <LucideIcon name={tab.icon} size={ICON_SIZE} color={colors.text} />
                                     </Animated.View>
                                 </View>
                             </View>

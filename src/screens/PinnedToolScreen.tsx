@@ -3,15 +3,17 @@ import { View, StyleSheet } from "react-native"
 import { converterTools } from "../data/converterTools"
 import ConverterDetail from "../components/ConverterDetail"
 import Currency from "./Currency"
+import { useTheme } from "../theme"
 
 type Props = {
     toolKey: string
 }
 
 export default ({ toolKey }: Props) => {
+    const { colors } = useTheme()
     if (toolKey === "currency") {
         return (
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
                 <Currency />
             </View>
         )
@@ -21,7 +23,7 @@ export default ({ toolKey }: Props) => {
     if (!tool) return null
 
     return (
-        <View style={[styles.container, styles.toolContainer]}>
+        <View style={[styles.container, styles.toolContainer, { backgroundColor: colors.background }]}>
             <ConverterDetail tool={tool} />
         </View>
     )

@@ -1,6 +1,6 @@
 import React from "react"
 import { StyleSheet, Text } from "react-native"
-import Svg, { Circle, Path, Rect } from "react-native-svg"
+import Svg, { Circle, G, Path, Rect } from "react-native-svg"
 
 type Props = { region: string; emoji: string; size?: number }
 
@@ -11,8 +11,12 @@ export default function CurrencyFlag({ region, emoji, size = 24 }: Props) {
             <Svg width={size} height={size * 0.75} viewBox="0 0 24 18" accessibilityLabel="Taiwan flag">
                 <Rect width="24" height="18" rx="2" fill="#fe0000" />
                 <Rect width="12" height="9" rx="1" fill="#000095" />
-                <Circle cx="6" cy="4.5" r="2.4" fill="#fff" />
-                <Path d="M6 1.65 6.53 3.1l1.55.03-1.23.92.47 1.48L6 4.65l-1.32.88.47-1.48-1.23-.92 1.55-.03L6 1.65Z" fill="#000095" />
+                {Array.from({ length: 12 }, (_, index) => (
+                    <G key={index} rotation={index * 30} origin="6, 4.5">
+                        <Path d="M6 0.72 6.58 2.85 5.42 2.85Z" fill="#fff" />
+                    </G>
+                ))}
+                <Circle cx="6" cy="4.5" r="1.65" fill="#fff" />
             </Svg>
         )
     }

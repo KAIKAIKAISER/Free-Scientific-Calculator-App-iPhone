@@ -6,6 +6,7 @@ import { getHistory, clearHistory, CalculationEntry } from "../utils/historyStor
 import LucideIcon from "./LucideIcon"
 import { HistoryContext } from "../../App"
 import { useI18n } from "../i18n"
+import { useTheme } from "../theme"
 
 type Section = {
     title: string
@@ -44,6 +45,7 @@ export default function HistoryDrawerContent({ onClose }: { onClose?: () => void
     const [sections, setSections] = useState<Section[]>([])
     const { onSelect, refreshKey } = useContext(HistoryContext)
     const { locale, t } = useI18n()
+    const { colors } = useTheme()
 
     useEffect(() => {
         getHistory().then((entries) => setSections(groupByDate(entries, locale === "en" ? "en-US" : locale, t("history.today"), t("history.yesterday"))))
@@ -65,33 +67,33 @@ export default function HistoryDrawerContent({ onClose }: { onClose?: () => void
 
     const renderItem = ({ item }: { item: CalculationEntry }) => (
         <TouchableOpacity style={styles.row} onPress={() => onSelect(item.expression)} activeOpacity={0.6}>
-            <Text style={styles.expression}>{item.expression}</Text>
-            <Text style={styles.result}>= {item.result}</Text>
+            <Text style={[styles.expression, { color: colors.secondaryText }]}>{item.expression}</Text>
+            <Text style={[styles.result, { color: colors.text }]}>= {item.result}</Text>
         </TouchableOpacity>
     )
 
     const renderSectionHeader = ({ section }: { section: Section }) => (
         <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>{section.title}</Text>
         </View>
     )
 
     return (
-        <SafeAreaView style={styles.container} edges={["bottom"]}>
-            <View style={styles.handle} />
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.surface }]} edges={["bottom"]}>
+            <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>{t("history.title")}</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>{t("history.title")}</Text>
                 {onClose && (
                     <TouchableOpacity onPress={onClose} style={styles.closeButton} activeOpacity={0.6}>
-                        <LucideIcon name="x" size={22} color="#888" />
+                        <LucideIcon name="x" size={22} color={colors.secondaryText} />
                     </TouchableOpacity>
                 )}
             </View>
 
             {sections.length === 0 ? (
                 <View style={styles.empty}>
-                    <LucideIcon name="clock" size={48} color="#555" />
-                    <Text style={styles.emptyText}>{t("history.empty")}</Text>
+                    <LucideIcon name="clock" size={48} color={colors.tertiaryText} />
+                    <Text style={[styles.emptyText, { color: colors.tertiaryText }]}>{t("history.empty")}</Text>
                 </View>
             ) : (
                 <>

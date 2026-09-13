@@ -11,6 +11,7 @@ import PinnedToolScreen from "./src/screens/PinnedToolScreen"
 import PinnedToolsTabBar from "./src/components/PinnedToolsTabBar"
 import HistoryDrawerContent from "./src/components/HistoryDrawerContent"
 import { I18nProvider } from "./src/i18n"
+import { ThemeProvider, useTheme } from "./src/theme"
 
 const { width } = Dimensions.get("window")
 const STORAGE_KEY = "pinnedConverterTools"
@@ -29,6 +30,7 @@ export const HistoryContext = createContext<{
 
 const MainScreen = () => {
     const insets = useSafeAreaInsets()
+    const { colors, isDark } = useTheme()
     const [pageIndex, setPageIndex] = useState(0)
     const [mounted, setMounted] = useState(false)
     const [screenOrder, setScreenOrder] = useState<string[]>(["_calculator", "currency"])
@@ -159,17 +161,17 @@ const MainScreen = () => {
         ...screenOrder.map((key) => ({
             key,
             render: key === "_calculator"
-                ? () => <Calculator />
+                ? () => <Calculator onOpenTools={() => scrollViewRef.current?.scrollTo({ x: converterIndex * width, animated: true })} />
                 : () => <PinnedToolScreen toolKey={key} />,
         })),
         { key: "_converter", render: () => <Converter focused={pageIndex === converterIndex} pinnedTools={pinnedToolKeys} screenOrder={screenOrder} onPinnedToolsChange={handlePinnedToolsChange} onRearrangeChange={handleConverterRearrange} onDetailChange={handleConverterDetailChange} /> },
     ]
 
     return (
-        <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-            <StatusBar style="light" />
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom', 'left', 'right']}>
+            <StatusBar style={isDark ? "light" : "dark"} />
 
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
                 <Animated.ScrollView
                     horizontal={true}
                     pagingEnabled={true}
@@ -184,11 +186,11 @@ const MainScreen = () => {
                     scrollEventThrottle={16}
                     ref={scrollViewRef}
                     showsHorizontalScrollIndicator={false}
-                    style={styles.container}
+                    style={[styles.container, { backgroundColor: colors.background }]}
                     onLayout={() => setMounted(true)}
                 >
                     {SCREENS.map((screen) => (
-                        <View key={screen.key} style={[styles.screen, { paddingTop: insets.top / 2 }]}>{mounted && screen.render()}</View>
+                        <View key={screen.key} style={[styles.screen, { paddingTop: insets.top / 2, backgroundColor: colors.background }]}>{mounted && screen.render()}</View>
                     ))}
                 </Animated.ScrollView>
 
@@ -231,29 +233,34 @@ const App = () => {
 
     return (
         <GestureHandlerRootView style={styles.container}>
-            <I18nProvider>
-                <SafeAreaProvider>
-                    <HistoryContext.Provider value={contextValue}>
-                        <CalcCallbackContext.Provider value={{ setOnSelect, bumpRefreshKey }}>
-                            <MainScreen />
-                            <Modal
-                                animationType="slide"
-                                visible={historyVisible}
-                                transparent={true}
-                                onRequestClose={closeHistory}
-                            >
-                                <View style={styles.modalOverlay}>
-                                    <Pressable style={styles.modalDismissArea} onPress={closeHistory} />
-                                    <View style={styles.modalSheet}>
-                                        <HistoryDrawerContent onClose={closeHistory} />
-                                    </View>
-                                </View>
-                            </Modal>
-                        </CalcCallbackContext.Provider>
-                    </HistoryContext.Provider>
-                </SafeAreaProvider>
-            </I18nProvider>
+            <ThemeProvider>
+                <I18nProvider>
+                    <SafeAreaProvider>
+                        <HistoryContext.Provider value={contextValue}>
+                            <CalcCallbackContext.Provider value={{ setOnSelect, bumpRefreshKey }}>
+                                <MainScreen />
+                                <HistoryModal visible={historyVisible} onClose={closeHistory} />
+                            </CalcCallbackContext.Provider>
+                        </HistoryContext.Provider>
+                    </SafeAreaProvider>
+                </I18nProvider>
+            </ThemeProvider>
         </GestureHandlerRootView>
+    )
+}
+
+function HistoryModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+    const { colors } = useTheme()
+
+    return (
+        <Modal animationType="slide" visible={visible} transparent={true} onRequestClose={onClose}>
+            <View style={styles.modalOverlay}>
+                <Pressable style={styles.modalDismissArea} onPress={onClose} />
+                <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+                    <HistoryDrawerContent onClose={onClose} />
+                </View>
+            </View>
+        </Modal>
     )
 }
 

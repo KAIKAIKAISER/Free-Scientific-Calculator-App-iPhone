@@ -22,6 +22,7 @@ import { hapticFeedback, hapticFeedbackSwitch } from "../utils"
 import { toolLabelKey, unitNameKey, useI18n } from "../i18n"
 import Button from "./Button"
 import LucideIcon from "./LucideIcon"
+import { ThemeColors, useTheme } from "../theme"
 
 const { width: screenWidth } = Dimensions.get("window")
 const BUTTON_SIZE = (screenWidth - 40) / 4
@@ -52,6 +53,7 @@ export default ({ tool, onBack }: Props) => {
 
 function UnitConverter({ tool, onBack }: Props) {
     const { t } = useI18n()
+    const { colors } = useTheme()
     const [input, setInput] = useState("1")
     const [inputEdited, setInputEdited] = useState(false)
     const [fromIndex, setFromIndex] = useState(0)
@@ -93,26 +95,26 @@ function UnitConverter({ tool, onBack }: Props) {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Header icon={tool.icon} label={t(toolLabelKey(tool.key, tool.label))} onBack={onBack} />
 
             <ScrollView style={styles.resultsList} contentContainerStyle={{ paddingBottom: 10 }}>
                 {results.map((r, i) => (
                     <TouchableOpacity
                         key={r.label}
-                        style={[styles.resultRow, i === fromIndex && styles.resultRowActive]}
+                        style={[styles.resultRow, i === fromIndex && [styles.resultRowActive, { backgroundColor: colors.elevated }]]}
                         onPress={() => {
                             setFromIndex(i)
                             setInput("1")
                             setInputEdited(false)
                         }}
                     >
-                        <Text style={[styles.resultLabel, i === fromIndex && { color: "white", fontSize: 22 }]}>{t(unitNameKey(r.name))}</Text>
+                        <Text style={[styles.resultLabel, { color: colors.secondaryText }, i === fromIndex && { color: colors.text, fontSize: 22 }]}>{t(unitNameKey(r.name))}</Text>
                         <View style={styles.resultValueRow}>
-                            <Text style={[styles.resultValue, i === fromIndex && { color: "#F69A06", fontSize: 26 }]} numberOfLines={1}>
+                            <Text style={[styles.resultValue, { color: colors.text }, i === fromIndex && { color: colors.accent, fontSize: 26 }]} numberOfLines={1}>
                                 {formatConversionResult(r.value)}
                             </Text>
-                            <Text style={[styles.resultUnit, i === fromIndex && { fontSize: 16 }]}>{r.label}</Text>
+                            <Text style={[styles.resultUnit, { color: colors.tertiaryText }, i === fromIndex && { fontSize: 16 }]}>{r.label}</Text>
                         </View>
                     </TouchableOpacity>
                 ))}
@@ -130,6 +132,7 @@ type CalcFieldConfig = {
     labelKey: string
     placeholder: string
     suffix?: string
+    suffixKey?: string
 }
 
 const calcFieldConfigs: Record<string, CalcFieldConfig[]> = {
@@ -157,12 +160,13 @@ const calcFieldConfigs: Record<string, CalcFieldConfig[]> = {
     loan: [
         { key: "principal", labelKey: "common.amount", placeholder: "200000" },
         { key: "rate", labelKey: "common.rate", placeholder: "5", suffix: "%" },
-        { key: "years", labelKey: "common.duration", placeholder: "30", suffix: " yrs" },
+        { key: "years", labelKey: "common.duration", placeholder: "30", suffixKey: "resultUnits.year" },
     ],
 }
 
 function CalculatorView({ tool, onBack }: Props) {
     const { t } = useI18n()
+    const { colors } = useTheme()
     const fields = calcFieldConfigs[tool.key] || []
     const initialValues: Record<string, string> = {}
     fields.forEach((f) => (initialValues[f.key] = f.placeholder))
@@ -221,26 +225,26 @@ function CalculatorView({ tool, onBack }: Props) {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <Header icon={tool.icon} label={t(toolLabelKey(tool.key, tool.label))} onBack={onBack} />
 
             <ScrollView style={styles.resultsList} contentContainerStyle={{ paddingBottom: 10 }}>
                 {fields.map((f) => (
                     <TouchableOpacity
                         key={f.key}
-                        style={[styles.calcFieldRow, activeField === f.key && styles.resultRowActive]}
+                        style={[styles.calcFieldRow, activeField === f.key && [styles.resultRowActive, { backgroundColor: colors.elevated }]]}
                         onPress={() => setActiveField(f.key)}
                     >
-                        <Text style={styles.resultLabel}>{t(f.labelKey)}</Text>
-                        <Text style={[styles.resultValue, activeField === f.key && { color: "#F69A06" }]}>
-                            {formatInputDisplay(values[f.key] || f.placeholder)}{f.suffix ? f.suffix : ""}
+                        <Text style={[styles.resultLabel, { color: colors.secondaryText }]}>{t(f.labelKey)}</Text>
+                        <Text style={[styles.resultValue, { color: colors.text }, activeField === f.key && { color: colors.accent }]}>
+                            {formatInputDisplay(values[f.key] || f.placeholder)}{f.suffixKey ? ` ${t(f.suffixKey)}` : f.suffix || ""}
                         </Text>
                     </TouchableOpacity>
                 ))}
 
                 {result && (
-                    <View style={styles.calcResult}>
-                        {renderCalcResult(tool.key, result, t)}
+                    <View style={[styles.calcResult, { backgroundColor: colors.elevated }]}>
+                        {renderCalcResult(tool.key, result, t, colors)}
                     </View>
                 )}
             </ScrollView>
@@ -250,14 +254,14 @@ function CalculatorView({ tool, onBack }: Props) {
     )
 }
 
-function renderCalcResult(key: string, result: any, t: (key: string) => string) {
+function renderCalcResult(key: string, result: any, t: (key: string) => string, colors: ThemeColors) {
     switch (key) {
         case "age":
             return (
                 <>
                     <Text style={styles.calcResultTitle}>{t("tools.age")}</Text>
-                    <Text style={styles.calcResultText}>
-                        {result.years} years, {result.months} months, {result.days} days
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>
+                        {result.years} {t("resultUnits.year")}, {result.months} {t("resultUnits.month")}, {result.days} {t("resultUnits.day")}
                     </Text>
                 </>
             )
@@ -265,7 +269,7 @@ function renderCalcResult(key: string, result: any, t: (key: string) => string) 
             return (
                 <>
                     <Text style={styles.calcResultTitle}>{t("tools.bmi")}</Text>
-                    <Text style={styles.calcResultText}>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>
                         {result.bmi} — {result.category}
                     </Text>
                 </>
@@ -274,27 +278,27 @@ function renderCalcResult(key: string, result: any, t: (key: string) => string) 
             return (
                 <>
                     <Text style={styles.calcResultTitle}>{t("tools.date")}</Text>
-                    <Text style={styles.calcResultText}>{formatNumber(result.totalDays, 0)} days</Text>
-                    <Text style={styles.calcResultText}>{formatNumber(result.weeks, 0)} weeks</Text>
-                    <Text style={styles.calcResultText}>{formatNumber(result.months, 1)} months</Text>
-                    <Text style={styles.calcResultText}>{formatNumber(result.years)} years</Text>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>{formatNumber(result.totalDays, 0)} {t("resultUnits.day")}</Text>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>{formatNumber(result.weeks, 0)} {t("resultUnits.week")}</Text>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>{formatNumber(result.months, 1)} {t("resultUnits.month")}</Text>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>{formatNumber(result.years)} {t("resultUnits.year")}</Text>
                 </>
             )
         case "discount":
             return (
                 <>
                     <Text style={styles.calcResultTitle}>{t("tools.discount")}</Text>
-                    <Text style={styles.calcResultText}>{t("discount.savings")}: {formatNumber(result.savings)}</Text>
-                    <Text style={styles.calcResultText}>{t("discount.finalPrice")}: {formatNumber(result.finalPrice)}</Text>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>{t("discount.savings")}: {formatNumber(result.savings)}</Text>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>{t("discount.finalPrice")}: {formatNumber(result.finalPrice)}</Text>
                 </>
             )
         case "loan":
             return (
                 <>
                     <Text style={styles.calcResultTitle}>{t("tools.loan")}</Text>
-                    <Text style={styles.calcResultText}>{t("loan.monthly")}: {formatNumber(result.monthly)}</Text>
-                    <Text style={styles.calcResultText}>{t("loan.totalPaid")}: {formatNumber(result.totalPaid)}</Text>
-                    <Text style={styles.calcResultText}>{t("loan.totalInterest")}: {formatNumber(result.totalInterest)}</Text>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>{t("loan.monthly")}: {formatNumber(result.monthly)}</Text>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>{t("loan.totalPaid")}: {formatNumber(result.totalPaid)}</Text>
+                    <Text style={[styles.calcResultText, { color: colors.text }]}>{t("loan.totalInterest")}: {formatNumber(result.totalInterest)}</Text>
                 </>
             )
         default:
@@ -309,18 +313,19 @@ function Header({ icon, label, onBack }: {
     label: string
     onBack?: () => void
 }) {
+    const { colors } = useTheme()
     return (
         <View style={styles.header}>
             {onBack ? (
-                <TouchableOpacity onPress={onBack} style={styles.glassButtonIcon}>
-                    <LucideIcon name="chevron-left" size={20} color="white" />
+                <TouchableOpacity onPress={onBack} style={[styles.glassButtonIcon, { backgroundColor: colors.overlay }]}>
+                    <LucideIcon name="chevron-left" size={20} color={colors.text} />
                 </TouchableOpacity>
             ) : (
                 <View style={styles.headerSpacer} />
             )}
             <View style={styles.headerCenter}>
-                <LucideIcon name={icon} size={20} color="#F69A06" />
-                <Text style={styles.headerTitle}>{label}</Text>
+                <LucideIcon name={icon} size={20} color={colors.accent} />
+                <Text style={[styles.headerTitle, { color: colors.text }]}>{label}</Text>
             </View>
             <View style={styles.headerSpacer} />
         </View>
@@ -338,6 +343,7 @@ function Keypad({
     onBackspace: () => void
     onToggleSign?: () => void
 }) {
+    const { colors } = useTheme()
     return (
         <View style={styles.keyboard}>
             <View style={styles.numberButtons}>
@@ -353,25 +359,25 @@ function Keypad({
                 ))}
                 {onToggleSign && (
                     <View style={{ width: BUTTON_SIZE, height: BUTTON_SIZE, padding: 5 }}>
-                        <TouchableOpacity style={styles.toggleSignButton} onPressIn={hapticFeedbackSwitch} onPress={onToggleSign}>
-                            <Text style={{ color: "white", fontSize: 24, fontWeight: "400" }}>+/-</Text>
+                            <TouchableOpacity style={[styles.toggleSignButton, { backgroundColor: colors.elevated }]} onPressIn={hapticFeedbackSwitch} onPress={onToggleSign}>
+                            <Text style={{ color: colors.text, fontSize: 24, fontWeight: "400" }}>+/-</Text>
                         </TouchableOpacity>
                     </View>
                 )}
             </View>
             <View style={styles.actionButtons}>
                 <View style={styles.actionButtonWrapper}>
-                    <TouchableOpacity style={styles.actionButton} onPressIn={hapticFeedbackSwitch} onPress={onClear}>
-                        <Text style={{ color: "#BF7600", fontSize: 30 }}>AC</Text>
+                    <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accentSurface }]} onPressIn={hapticFeedbackSwitch} onPress={onClear}>
+                        <Text style={{ color: colors.accentText, fontSize: 30 }}>AC</Text>
                     </TouchableOpacity>
                 </View>
                 <View style={styles.actionButtonWrapper}>
                     <TouchableOpacity
                         onPressIn={hapticFeedback}
-                        style={[styles.actionButton, { backgroundColor: "#F69A06" }]}
+                        style={[styles.actionButton, { backgroundColor: colors.accent }]}
                         onPress={onBackspace}
                     >
-                        <Text style={{ color: "white", fontSize: 35 }}>⌫</Text>
+                        <Text style={{ color: colors.text, fontSize: 35 }}>⌫</Text>
                     </TouchableOpacity>
                 </View>
             </View>

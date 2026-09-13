@@ -3,8 +3,10 @@ import { Text, TouchableOpacity, View, StyleSheet, Dimensions, ScrollView } from
 import * as Haptics from "expo-haptics"
 import Svg, { Path } from "react-native-svg"
 import * as Localization from "expo-localization"
+import { useTheme } from "../theme"
 
 export default ({ expanded, onPress, type, value, theme, label, action, inverted, hyperbolic, isRadian }: any) => {
+    const { colors } = useTheme()
     const hapticFeedback = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 
     // If the button is a number, render the number, else render the label
@@ -12,14 +14,14 @@ export default ({ expanded, onPress, type, value, theme, label, action, inverted
         return (
             <TouchableOpacity
                 key={value}
-                style={[styles.button, expanded && { borderRadius: 18 }]}
+                style={[styles.button, { backgroundColor: colors.elevated }, expanded && { borderRadius: 18 }]}
                 onPressIn={hapticFeedback}
                 onPress={() => {
                     if (action) return action()
                     return onPress(value)
                 }}
             >
-                <Text style={[{ color: "white" }, expanded ? { fontSize: 30 } : { fontSize: 38 }]}>
+                <Text style={[{ color: colors.text }, expanded ? { fontSize: 30 } : { fontSize: 38 }]}>
                     {value === "." ? Localization.getLocales()[0].decimalSeparator ?? "." : value}
                 </Text>
             </TouchableOpacity>
@@ -33,15 +35,16 @@ export default ({ expanded, onPress, type, value, theme, label, action, inverted
             key={value}
             style={[
                 styles.button,
-                theme === "equal" && { backgroundColor: "#F69A06" },
-                theme === "primary" && { backgroundColor: "#3E2702" },
-                theme === "secondary" && { backgroundColor: "#171717" },
-                theme === "expand" && { backgroundColor: "black" },
+                { backgroundColor: colors.elevated },
+                theme === "equal" && { backgroundColor: colors.accent },
+                theme === "primary" && { backgroundColor: colors.accentSurface },
+                theme === "secondary" && { backgroundColor: colors.mutedSurface },
+                theme === "expand" && { backgroundColor: colors.background },
                 expanded && { borderRadius: 18 },
 
-                inverted && label === "INV" && { backgroundColor: "#333333" },
-                hyperbolic && label === "HYP" && { backgroundColor: "#333333" },
-                value === "DEG" && isRadian && { backgroundColor: "#333333" }
+                inverted && label === "INV" && { backgroundColor: colors.border },
+                hyperbolic && label === "HYP" && { backgroundColor: colors.border },
+                value === "DEG" && isRadian && { backgroundColor: colors.border }
             ]}
             onPressIn={hapticFeedback}
             onPress={() => {
@@ -66,13 +69,13 @@ export default ({ expanded, onPress, type, value, theme, label, action, inverted
                             textAlign: "center",
                             justifyContent: "center",
                             verticalAlign: "middle",
-                            color: "white",
+                            color: colors.text,
                             fontSize: 38
                         },
                         theme === "equal" && { fontSize: 50, lineHeight: 55 },
-                        theme === "primary" && { color: "#FF9D00", fontSize: 45, lineHeight: 50 },
-                        theme === "secondary" && { color: "#BEBEBE" },
-                        value === "AC" && { color: "#BF7600" },
+                        theme === "primary" && { color: colors.accent, fontSize: 45, lineHeight: 50 },
+                        theme === "secondary" && { color: colors.secondaryText },
+                        value === "AC" && { color: colors.accentText },
                         value === "()" && { marginBottom: 5, fontWeight: "500" },
                         expanded && theme === "secondary" && { fontSize: 22 },
                         expanded && theme !== "secondary" && { fontSize: 32 },

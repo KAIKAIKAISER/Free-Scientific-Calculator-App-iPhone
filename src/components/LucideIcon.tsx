@@ -40,6 +40,13 @@ const icons: Record<string, El[]> = {
         { type: "circle", cx: 12, cy: 12, r: 10 },
         { type: "path", d: "M12 6v6l4 2" },
     ],
+    sun: [
+        { type: "circle", cx: 12, cy: 12, r: 4 },
+        { type: "path", d: "M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" },
+    ],
+    moon: [
+        { type: "path", d: "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" },
+    ],
     database: [
         { type: "ellipse", cx: 12, cy: 5, rx: 9, ry: 3 },
         { type: "path", d: "M3 5V19A9 3 0 0 0 21 19V5" },

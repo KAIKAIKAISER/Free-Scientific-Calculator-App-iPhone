@@ -21,6 +21,8 @@ import ConverterDetail from "../components/ConverterDetail"
 import LucideIcon from "../components/LucideIcon"
 import Currency from "./Currency"
 import { hapticFeedbackSwitch } from "../utils"
+import { useI18n } from "../i18n"
+import { useTheme } from "../theme"
 
 const { width: screenWidth } = Dimensions.get("window")
 const COLUMNS = 4
@@ -60,6 +62,8 @@ type Props = {
 }
 
 export default ({ focused = false, pinnedTools = [], screenOrder = [], onPinnedToolsChange, onRearrangeChange, onDetailChange }: Props) => {
+    const { t } = useI18n()
+    const { colors } = useTheme()
     const [selectedTool, setSelectedTool] = useState<ConverterTool | null>(null)
     const [toolOrder, setToolOrder] = useState<string[]>(() => converterTools.map(t => t.key))
     const [rearranging, setRearranging] = useState(false)
@@ -342,7 +346,7 @@ export default ({ focused = false, pinnedTools = [], screenOrder = [], onPinnedT
 
         if (overBar) {
             if (barFull) {
-                showToast("Toolbar is full (max 5)")
+                showToast(t("tools.toolbarFull"))
             } else {
                 const insertIdx = computeInsertIndex(absX)
                 const currentOrder = screenOrderRef.current.slice()
@@ -375,7 +379,7 @@ export default ({ focused = false, pinnedTools = [], screenOrder = [], onPinnedT
             cardOffsets.forEach(o => { o.x.value = 0; o.y.value = 0 })
             for (let i = 0; i < MAX_BAR_ITEMS; i++) barItemOffsets[i].value = 0
         })
-    }, [computeInsertIndex, isOverInlineBar, isDragging, dragScale, cardOffsets, barItemOffsets, showToast])
+    }, [computeInsertIndex, isOverInlineBar, isDragging, dragScale, cardOffsets, barItemOffsets, showToast, t])
 
     const handleCardPressOut = useCallback((idx: number) => {
         setTimeout(() => {
@@ -602,10 +606,13 @@ export default ({ focused = false, pinnedTools = [], screenOrder = [], onPinnedT
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.innerContainer} ref={containerRef} onLayout={() => {
                 containerRef.current?.measureInWindow((_x, y) => { containerOffsetY.current = y })
             }}>
+                <View style={styles.toolsHeader}>
+                    <Text style={[styles.toolsTitle, { color: colors.text }]}>{t("tabs.tools")}</Text>
+                </View>
                 <View
                     style={styles.inlineBar}
                     ref={inlineBarRef}
@@ -665,18 +672,18 @@ export default ({ focused = false, pinnedTools = [], screenOrder = [], onPinnedT
                         pointerEvents="none"
                         style={[styles.floatingBarIcon, floatingBarIconStyle]}
                     >
-                        <LucideIcon name={iconForKey(screenOrder[barDragIdx])} size={INLINE_BAR_ICON} color="#999" />
+                        <LucideIcon name={iconForKey(screenOrder[barDragIdx])} size={INLINE_BAR_ICON} color={colors.secondaryText} />
                     </Animated.View>
                 )}
                 {toastMessage && (
                     <Animated.View pointerEvents="none" style={[styles.toast, toastAnimStyle]}>
-                        <Text style={styles.toastText}>{toastMessage}</Text>
+                        <Text style={[styles.toastText, { color: colors.text }]}>{toastMessage}</Text>
                     </Animated.View>
                 )}
             </View>
             {selectedTool && (
                 <GestureDetector gesture={detailPanGesture}>
-                    <Animated.View style={[styles.detailOverlay, detailAnimStyle]}>
+                    <Animated.View style={[styles.detailOverlay, { backgroundColor: colors.background }, detailAnimStyle]}>
                         {selectedTool.key === "currency"
                             ? <Currency onBack={goBack} />
                             : <ConverterDetail tool={selectedTool} onBack={goBack} />
@@ -879,6 +886,15 @@ const styles = StyleSheet.create({
     },
     innerContainer: {
         flex: 1,
+    },
+    toolsHeader: {
+        alignItems: "center",
+        paddingTop: 10,
+        paddingBottom: 4,
+    },
+    toolsTitle: {
+        fontSize: 18,
+        fontWeight: "600",
     },
     detailOverlay: {
         ...StyleSheet.absoluteFillObject,

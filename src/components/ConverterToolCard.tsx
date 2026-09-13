@@ -4,6 +4,7 @@ import { ConverterTool } from "../data/converterTools"
 import { toolLabelKey, useI18n } from "../i18n"
 import { hapticFeedback } from "../utils"
 import LucideIcon from "./LucideIcon"
+import { useTheme } from "../theme"
 
 const { width: screenWidth } = Dimensions.get("window")
 const CARD_SIZE = (screenWidth - 20 - 8 * 8) / 4
@@ -18,9 +19,10 @@ type Props = {
 
 export default ({ tool, onPress, onLongPress, onPressOut, delayLongPress = 300 }: Props) => {
     const { t } = useI18n()
+    const { colors } = useTheme()
     return (
         <TouchableOpacity
-            style={styles.card}
+            style={[styles.card, { backgroundColor: colors.elevated }]}
             onPressIn={hapticFeedback}
             onPress={onPress}
             onLongPress={onLongPress}
@@ -29,9 +31,9 @@ export default ({ tool, onPress, onLongPress, onPressOut, delayLongPress = 300 }
             activeOpacity={0.7}
         >
             <View style={styles.iconContainer}>
-                <LucideIcon name={tool.icon} size={28} color="white" />
+                <LucideIcon name={tool.icon} size={28} color={colors.text} />
             </View>
-            <Text style={styles.label}>{t(toolLabelKey(tool.key, tool.label))}</Text>
+            <Text style={[styles.label, { color: colors.text }]}>{t(toolLabelKey(tool.key, tool.label))}</Text>
         </TouchableOpacity>
     )
 }
