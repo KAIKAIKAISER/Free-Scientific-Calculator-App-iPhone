@@ -66,7 +66,7 @@
   },
   "discount": { "savings": "Savings", "finalPrice": "Final price" },
   "loan": { "monthly": "Monthly payment", "totalPaid": "Total paid", "totalInterest": "Total interest" },
-  "calculator": { "invalidInput": "Invalid input", "paste": "Paste", "clearAll": "Clear everything", "openTools": "Open tools", "lightMode": "Day mode", "darkMode": "Night mode" },
+  "calculator": { "invalidInput": "Invalid input", "paste": "Paste", "backspace": "Backspace", "clearAll": "Clear everything", "openTools": "Open tools", "lightMode": "Day mode", "darkMode": "Night mode" },
   "resultUnits": { "year": "years", "month": "months", "day": "days", "week": "weeks" },
   "history": { "title": "History", "today": "Today", "yesterday": "Yesterday", "empty": "No calculations yet", "clear": "Clear History", "clearTitle": "Clear History", "clearMessage": "Remove all calculation history?" },
   "units": {

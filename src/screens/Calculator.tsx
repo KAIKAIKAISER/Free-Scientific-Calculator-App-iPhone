@@ -329,7 +329,7 @@ const App = ({ onOpenTools }: Props) => {
             action: handleChangeAngleUnit
         },
         { type: "operator", theme: "secondary", label: "√x", value: "sqrt(", expanded: true },
-        { type: "action", theme: "secondary", label: "AC", value: "AC", action: handleClear },
+        { type: "action", theme: "secondary", label: currentInput || error ? "C" : "AC", value: "AC", action: handleClear },
         {
             type: "action",
             theme: "secondary",
@@ -367,70 +367,122 @@ const App = ({ onOpenTools }: Props) => {
         { type: "operator", theme: "equal", label: "=", value: "=", action: handleCalculate }
     ]
 
+    // The compact calculator follows the flat four-column layout from the reference UI.
+    // Scientific keys remain available through the expand control below.
+    const BASIC_BUTTONS = [
+        { type: "action", theme: "default", label: currentInput || error ? "C" : "AC", value: "AC", action: handleClear },
+        { type: "backspace", theme: "default", label: "", value: "backspace", action: handleBackspace },
+        { type: "operator", theme: "default", label: "÷", value: "/" },
+        { type: "operator", theme: "default", label: "×", value: "*" },
+        { type: "number", theme: "default", value: "7" },
+        { type: "number", theme: "default", value: "8" },
+        { type: "number", theme: "default", value: "9" },
+        { type: "operator", theme: "default", label: "−", value: "-" },
+        { type: "number", theme: "default", value: "4" },
+        { type: "number", theme: "default", value: "5" },
+        { type: "number", theme: "default", value: "6" },
+        { type: "operator", theme: "default", label: "+", value: "+" },
+        { type: "number", theme: "default", value: "1" },
+        { type: "number", theme: "default", value: "2" },
+        { type: "number", theme: "default", value: "3" },
+        { type: "action", theme: "default", label: "%", value: "%" },
+        { type: "number", theme: "default", value: "0" },
+        { type: "number", theme: "default", label: ",", value: ".", action: handleDecimalPoint },
+    ]
+
+    const EQUAL_BUTTON = { type: "operator", theme: "equal", label: "=", value: "=", action: handleCalculate }
+    const BASIC_ROWS = [
+        BASIC_BUTTONS.slice(0, 4),
+        BASIC_BUTTONS.slice(4, 8),
+        BASIC_BUTTONS.slice(8, 12),
+        BASIC_BUTTONS.slice(12, 15),
+        BASIC_BUTTONS.slice(15, 18),
+    ]
+
     const renderInput = () => {
         if (error) return <Text style={[styles.inputText, { color: colors.accent }]}>{error}</Text>
 
-        return (
-            <>
-                {currentInput && (
-                    <View style={styles.chunkContainer}>
-                        {currentInput.split(/([+\-*/])/).map((chunk, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={[
-                                    styles.chunk,
-                                    { height: chunkFontSize + 15 },
-                                    selectedChunk === index && [styles.selectedChunk, { backgroundColor: colors.selection }]
-                                ]}
-                                onLongPress={() => handleCopy(chunk)}
-                                onPress={() => {
-                                    if (isClipboardMenuVisible) return setIsClipboardMenuVisible(false)
-                                    if (selectedChunk === index) return setSelectedChunk(-1)
-                                    handleSelectChunk(index)
-                                }}
-                                onLayout={({ nativeEvent }) => {
-                                    setChunkWidths((prev) => {
-                                        const newWidths = [...prev]
-                                        newWidths[index] = nativeEvent.layout.width
-                                        return newWidths
-                                    })
-                                }}
-                            >
-                                <Text
-                                    style={[
-                                        styles.inputText,
-                                        { color: colors.text },
-                                        { fontSize: chunkFontSize, lineHeight: chunkFontSize + 4 }
-                                    ]}
-                                >
-                                    {formatChunk(chunk)}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                )}
+        if (!currentInput) {
+            return (
+                <View style={styles.emptyInput}>
+                    <Text style={[styles.inputText, { color: colors.text }]} onLongPress={openClipboardMenu}>
+                        0
+                    </Text>
+                </View>
+            )
+        }
 
-                {/* Backspace button */}
-                {currentInput && (
+        const chunks = currentInput.split(/([+\-*/])/)
+        const expressionLines: number[][] = []
+        if (chunks[0]) expressionLines.push([0])
+        for (let index = 1; index < chunks.length; index += 2) {
+            const line = [index]
+            if (chunks[index + 1]) line.push(index + 1)
+            expressionLines.push(line)
+        }
+        const formatDisplayChunk = (chunk: string) => {
+            if (chunk === "*") return "×"
+            if (chunk === "/") return "÷"
+            return formatChunk(chunk)
+        }
+
+        return (
+            <View style={styles.displayContent}>
+                <View style={styles.expressionContainer}>
+                    {expressionLines.map((line, lineIndex) => (
+                        <View style={styles.expressionLine} key={`line-${lineIndex}`}>
+                            {line.map((chunkIndex) => {
+                                const chunk = chunks[chunkIndex]
+                                return (
+                                    <TouchableOpacity
+                                        key={`chunk-${chunkIndex}`}
+                                        style={[
+                                            styles.displayChunk,
+                                            selectedChunk === chunkIndex && [styles.selectedChunk, { backgroundColor: colors.selection }]
+                                        ]}
+                                        onLongPress={() => handleCopy(chunk)}
+                                        onPress={() => {
+                                            if (isClipboardMenuVisible) return setIsClipboardMenuVisible(false)
+                                            if (selectedChunk === chunkIndex) return setSelectedChunk(-1)
+                                            handleSelectChunk(chunkIndex)
+                                        }}
+                                        onLayout={({ nativeEvent }) => {
+                                            setChunkWidths((prev) => {
+                                                const next = [...prev]
+                                                next[chunkIndex] = nativeEvent.layout.width
+                                                return next
+                                            })
+                                        }}
+                                    >
+                                        <Text style={[styles.expressionText, { color: colors.secondaryText }]}>
+                                            {formatDisplayChunk(chunk)}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )
+                            })}
+                        </View>
+                    ))}
+                </View>
+
+                <View style={styles.resultRow}>
+                    <Text
+                        style={[styles.resultText, { color: colors.text }]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.55}
+                    >
+                        {tempResult ? `= ${formatResult(tempResult)}` : chunks.map(formatDisplayChunk).join("")}
+                    </Text>
                     <TouchableOpacity
                         style={styles.backspaceButton}
                         onPressIn={hapticFeedback}
                         onPress={handleBackspace}
+                        accessibilityLabel={t("calculator.backspace")}
                     >
-                        <Text style={[styles.backspaceText, { color: colors.secondaryText }]}>⌫</Text>
+                        <LucideIcon name="delete" size={30} color={colors.secondaryText} />
                     </TouchableOpacity>
-                )}
+                </View>
 
-                {/* Default to 0 */}
-                {!currentInput && (
-                    <View style={{ flex: 1 }}>
-                        <Text style={[styles.inputText, { color: colors.text }]} onLongPress={openClipboardMenu}>
-                            0
-                        </Text>
-                    </View>
-                )}
-
-                {/* Clipboard menu */}
                 {isClipboardMenuVisible && (
                     <View style={styles.clipboardMenuContainer}>
                         <TouchableOpacity style={styles.clipboardMenu} onPress={pasteClipboard}>
@@ -438,7 +490,7 @@ const App = ({ onOpenTools }: Props) => {
                         </TouchableOpacity>
                     </View>
                 )}
-            </>
+            </View>
         )
     }
 
@@ -462,7 +514,7 @@ const App = ({ onOpenTools }: Props) => {
                         </TouchableOpacity>
                         {onOpenTools && (
                             <TouchableOpacity style={[styles.toolbarButton, { backgroundColor: colors.overlay }]} onPress={onOpenTools} activeOpacity={0.6} accessibilityLabel={t("calculator.openTools")}>
-                                <LucideIcon name="layout-grid" size={19} color={colors.accent} />
+                                <LucideIcon name="grid-3x3" size={19} color={colors.accent} />
                             </TouchableOpacity>
                         )}
                         <TouchableOpacity style={[styles.toolbarButton, { backgroundColor: colors.overlay }]} onPress={toggleTheme} activeOpacity={0.6} accessibilityLabel={isDark ? t("calculator.lightMode") : t("calculator.darkMode")}>
@@ -490,38 +542,69 @@ const App = ({ onOpenTools }: Props) => {
 
                 <View style={styles.inputContainer}>{renderInput()}</View>
 
-                {currentInput && tempResult && (
-                    <Text style={[styles.temporaryResultText, { color: colors.secondaryText }]}>= {formatResult(tempResult)}</Text>
-                )}
             </View>
 
-            <View style={[styles.buttonContainer, expanded && { marginBottom: 75, paddingHorizontal: 15 }]}>
-                {BUTTONS.filter((button) => {
-                    if (!expanded && button.expanded) return false
-                    return true
-                }).map((button) => (
-                    <View
-                        style={[
-                            styles.buttonWrapper,
-                            expanded && {
-                                width: EXPANDED_BUTTON_SIZE,
-                                height: EXPANDED_BUTTON_SIZE,
-                                margin: 1
-                            }
-                        ]}
-                    >
+            {expanded ? (
+                <View style={[styles.buttonContainer, { marginBottom: 75, paddingHorizontal: 15 }]}>
+                    {BUTTONS.filter((button) => button.expanded || !button.expanded).map((button, index) => (
+                        <View
+                            key={`${button.value}-${index}`}
+                            style={[
+                                styles.buttonWrapper,
+                                {
+                                    width: EXPANDED_BUTTON_SIZE,
+                                    height: EXPANDED_BUTTON_SIZE,
+                                    margin: 1
+                                }
+                            ]}
+                        >
+                            <Button
+                                {...button}
+                                expanded={expanded}
+                                inverted={inverted}
+                                hyperbolic={hyperbolic}
+                                isRadian={isRadian}
+                                onPress={handlePress}
+                            />
+                        </View>
+                    ))}
+                </View>
+            ) : (
+                <View style={[styles.basicGrid, { backgroundColor: colors.surface }]}>
+                    {BASIC_ROWS.map((buttons, row) => (
+                        <View style={styles.basicRow} key={`basic-row-${row}`}>
+                            {buttons.map((button, index) => {
+                                const buttonIndex = row * 4 + index
+                                return (
+                                    <View style={styles.basicButtonWrapper} key={`${button.value}-${buttonIndex}`}>
+                                        <Button
+                                            {...button}
+                                            flat
+                                            expanded={false}
+                                            inverted={inverted}
+                                            hyperbolic={hyperbolic}
+                                            isRadian={isRadian}
+                                            onPress={handlePress}
+                                        />
+                                    </View>
+                                )
+                            })}
+                            {row >= 3 && <View style={styles.basicEqualSpacer} />}
+                        </View>
+                    ))}
+                    <View style={styles.basicEqualWrapper}>
                         <Button
-                            key={button.value}
-                            {...button}
-                            expanded={expanded}
+                            {...EQUAL_BUTTON}
+                            flat
+                            expanded={false}
                             inverted={inverted}
                             hyperbolic={hyperbolic}
                             isRadian={isRadian}
                             onPress={handlePress}
                         />
                     </View>
-                ))}
-            </View>
+                </View>
+            )}
         </View>
     )
 }
@@ -557,7 +640,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     historyContainer: {
-        flex: 3,
+        flex: 1.1,
         justifyContent: "flex-end",
         alignItems: "flex-end",
         paddingRight: 20
@@ -568,13 +651,14 @@ const styles = StyleSheet.create({
         color: "gray"
     },
     inputContainer: {
-        flex: 1,
-        minHeight: 100,
+        flex: 2.2,
+        minHeight: 170,
         width: "100%",
-        flexDirection: "row",
+        flexDirection: "column",
         alignItems: "flex-end",
         justifyContent: "flex-end",
-        paddingRight: 20
+        paddingHorizontal: 20,
+        paddingBottom: 8,
     },
     buttonContainer: {
         marginTop: "auto",
@@ -586,6 +670,34 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         flexWrap: "wrap"
+    },
+    basicGrid: {
+        width: screenWidth,
+        height: BUTTON_SIZE * 5,
+        position: "relative",
+        flexDirection: "column",
+    },
+    basicRow: {
+        width: "100%",
+        height: BUTTON_SIZE,
+        flexDirection: "row",
+    },
+    basicButtonWrapper: {
+        width: "25%",
+        height: "100%",
+        padding: 0,
+        margin: 0,
+    },
+    basicEqualSpacer: {
+        width: "25%",
+        height: "100%",
+    },
+    basicEqualWrapper: {
+        position: "absolute",
+        right: 0,
+        top: BUTTON_SIZE * 3,
+        width: "25%",
+        height: BUTTON_SIZE * 2,
     },
     buttonWrapper: {
         width: BUTTON_SIZE,
@@ -602,13 +714,56 @@ const styles = StyleSheet.create({
         lineHeight: 52,
         color: "white"
     },
+    emptyInput: {
+        flex: 1,
+        width: "100%",
+        justifyContent: "flex-end",
+    },
+    displayContent: {
+        width: "100%",
+        flex: 1,
+        justifyContent: "flex-end",
+    },
+    expressionContainer: {
+        width: "100%",
+        alignItems: "flex-end",
+        paddingRight: 42,
+        paddingBottom: 2,
+    },
+    expressionLine: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        minHeight: 30,
+    },
+    displayChunk: {
+        paddingHorizontal: 1,
+        paddingVertical: 0,
+    },
+    expressionText: {
+        fontSize: 24,
+        lineHeight: 30,
+        textAlign: "right",
+    },
+    resultRow: {
+        width: "100%",
+        minHeight: 68,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "flex-end",
+    },
+    resultText: {
+        flexShrink: 1,
+        fontSize: 48,
+        lineHeight: 58,
+        textAlign: "right",
+    },
     backspaceButton: {
-        position: "absolute",
         justifyContent: "center",
         alignItems: "center",
-        width: 50,
-        right: 15,
-        bottom: 10
+        width: 40,
+        height: 44,
+        marginLeft: 8,
     },
     backspaceText: {
         fontSize: 32,

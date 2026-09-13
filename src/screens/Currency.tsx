@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
+import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -11,17 +11,31 @@ import { getExchangeRates, refreshExchangeRates, RatesResult } from "../services
 import { useTheme } from "../theme"
 const CURRENCY_KEY = "currency.displayed"
 const FAVORITES_KEY = "currency.favorites"
-const DEFAULT_CURRENCIES = ["CNY", "USD", "JPY", "EUR", "HKD", "TWD"]
+const DEFAULT_CURRENCIES = ["CNY", "EUR", "JPY", "USD", "GBP"]
+const { height: screenHeight } = Dimensions.get("window")
+const CURRENCY_HEADER_HEIGHT = Math.max(52, Math.min(100, screenHeight * 0.09))
+const CURRENCY_ROW_HEIGHT = Math.max(48, Math.min(108, screenHeight * 0.075))
+const CURRENCY_STATUS_HEIGHT = Math.max(28, Math.min(50, screenHeight * 0.045))
+const CURRENCY_KEYPAD_HEIGHT = Math.max(220, Math.min(520, screenHeight * 0.42))
+const CURRENCY_FLAG_SIZE = Math.max(32, Math.min(48, CURRENCY_ROW_HEIGHT * 0.82))
+const CURRENCY_CODE_FONT_SIZE = Math.max(18, Math.min(27, screenHeight * 0.03))
+const CURRENCY_AMOUNT_FONT_SIZE = Math.max(21, Math.min(29, screenHeight * 0.034))
+const CURRENCY_NAME_FONT_SIZE = Math.max(12, Math.min(16, screenHeight * 0.018))
+const CURRENCY_KEYPAD_FONT_SIZE = Math.max(28, Math.min(38, screenHeight * 0.045))
 
-type Props = { onBack?: () => void }
+type Props = { onBack?: () => void; onOpenTools?: () => void }
 
 function localeTag(locale: "en" | "zh-CN" | "zh-TW") {
     return locale === "en" ? "en-US" : locale
 }
 
-function formatAmount(code: string, amount: number, locale: "en" | "zh-CN" | "zh-TW") {
-    const decimals = getCurrency(code).decimals
-    return amount.toLocaleString(localeTag(locale), { maximumFractionDigits: decimals })
+function formatExchangeAmount(amount: number, locale: "en" | "zh-CN" | "zh-TW") {
+    if (!Number.isFinite(amount)) return "0.0000"
+    return amount.toLocaleString(localeTag(locale), {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+        useGrouping: true,
+    })
 }
 
 function safeDisplayedCodes(value: string | null) {
@@ -30,13 +44,16 @@ function safeDisplayedCodes(value: string | null) {
         const parsed: unknown = JSON.parse(value)
         if (!Array.isArray(parsed)) return DEFAULT_CURRENCIES
         const codes = parsed.filter((code): code is string => typeof code === "string" && !!currencies[code])
-        return codes.length ? Array.from(new Set(codes)) : DEFAULT_CURRENCIES
+        const uniqueCodes = Array.from(new Set(codes))
+        return uniqueCodes.length
+            ? [...uniqueCodes, ...DEFAULT_CURRENCIES.filter((code) => !uniqueCodes.includes(code))]
+            : DEFAULT_CURRENCIES
     } catch {
         return DEFAULT_CURRENCIES
     }
 }
 
-export default function Currency({ onBack }: Props = {}) {
+export default function Currency({ onBack, onOpenTools }: Props = {}) {
     const { locale, t } = useI18n()
     const { colors } = useTheme()
     const [displayedCurrencies, setDisplayedCurrencies] = useState(DEFAULT_CURRENCIES)
@@ -151,17 +168,36 @@ export default function Currency({ onBack }: Props = {}) {
     }
 
     const handleAmountChange = (value: string) => {
-        const activeCode = displayedCurrencies[activeCurrencyIndex]
-        const decimals = getCurrency(activeCode).decimals
         let next = value.replaceAll(",", ".").replace(/[^0-9.-]/g, "")
         if (next.includes("-")) next = `${next.startsWith("-") ? "-" : ""}${next.replaceAll("-", "")}`
-        if (decimals === 0 && next.includes(".")) next = next.split(".")[0]
-        setActiveAmount(next)
+        if (next.split(".").length > 2) {
+            const [integer, ...fraction] = next.split(".")
+            next = `${integer}.${fraction.join("")}`
+        }
+        setActiveAmount(next.slice(0, 18))
+    }
+
+    const handleKeypadPress = (value: string) => {
+        if (value === ".") {
+            if (activeAmount.includes(".")) return
+            return setActiveAmount((current) => `${current || "0"}.`)
+        }
+        setActiveAmount((current) => {
+            if (current === "0") return value
+            return `${current}${value}`.slice(0, 18)
+        })
+    }
+
+    const clearActiveAmount = () => setActiveAmount("0")
+
+    const backspaceActiveAmount = () => {
+        setActiveAmount((current) => current.length > 1 ? current.slice(0, -1) : "0")
     }
 
     const changeActiveCurrency = (index: number) => {
         setActiveCurrencyIndex(index)
-        setActiveAmount(String(amounts[index] ?? 0))
+        const amount = amounts[index] ?? 0
+        setActiveAmount(Number.isFinite(amount) ? String(Number(amount.toFixed(8))) : "0")
     }
 
     const updatedLabel = rates?.updatedAt
@@ -169,83 +205,132 @@ export default function Currency({ onBack }: Props = {}) {
         : ""
     const rateStatus = isRefreshing
         ? t("currency.updating")
-        : rates?.updatedAt
-            ? rates.stale || rateFetchFailed
-                ? t("currency.updateFailed")
+            : rates?.updatedAt
+                ? rates.stale || rateFetchFailed
+                    ? t("currency.updateFailed")
                 : rates.fromCache
                     ? `${t("currency.cached")} · ${updatedLabel}`
                     : updatedLabel
             : rateFetchFailed ? t("currency.noRates") : t("currency.tapToLoad")
+    const footerStatus = rates?.updatedAt
+        ? `${t("currency.rateSource")} · ${updatedLabel}`
+        : rateStatus
+    const menuAction = onOpenTools ?? onBack
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["bottom", "left", "right"]}>
-            <View style={styles.header}>
-                {onBack ? (
-                    <TouchableOpacity onPress={onBack} style={styles.iconButton} accessibilityLabel={t("common.back")}>
-                        <LucideIcon name="chevron-left" size={20} color={colors.text} />
+            <View style={[styles.currencySurface, { backgroundColor: colors.surface }]}>
+                <View style={styles.header}>
+                    <TouchableOpacity
+                        onPress={menuAction}
+                        style={[styles.menuButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                        disabled={!menuAction}
+                        accessibilityLabel={t("calculator.openTools")}
+                    >
+                        <LucideIcon name="grid-3x3" size={20} color={colors.secondaryText} />
                     </TouchableOpacity>
-                ) : <View style={styles.headerSpacer} />}
-                <Text style={[styles.title, { color: colors.text }]}>{t("currency.title")}</Text>
-                <TouchableOpacity onPress={() => openPicker("add")} style={styles.iconButton} accessibilityLabel={t("currency.add")}>
-                    <LucideIcon name="plus" size={20} color={colors.accent} />
-                </TouchableOpacity>
-            </View>
+                    <Text style={[styles.title, { color: colors.text }]}>{t("currency.title")}</Text>
+                    <TouchableOpacity onPress={() => openPicker("add")} style={styles.iconButton} accessibilityLabel={t("currency.add")}>
+                        <LucideIcon name="plus" size={20} color={colors.accent} />
+                    </TouchableOpacity>
+                </View>
 
-            <ScrollView style={styles.currencyList} contentContainerStyle={styles.currencyListContent}>
-                {displayedCurrencies.map((code, index) => {
-                    const currency = getCurrency(code)
-                    const active = index === activeCurrencyIndex
-                    const displayValue = formatAmount(code, amounts[index] ?? 0, locale)
-                    return (
-                        <View style={[styles.currencyRow, active && [styles.currencyRowActive, { backgroundColor: colors.elevated }]]} key={`${code}-${index}`}>
-                            <TouchableOpacity style={styles.currencySelector} onPress={() => { setActiveCurrencyIndex(index); openPicker("replace") }} onLongPress={() => toggleFavorite(code)}>
-                                <CurrencyFlag region={currency.region} emoji={currency.flag} />
-                                <View style={styles.currencyIdentity}>
-                                    <Text style={[styles.currencyCode, { color: colors.text }]}>{code}</Text>
-                                    <Text style={[styles.currencyName, { color: colors.secondaryText }]}>{currency.name[locale]}</Text>
+                <ScrollView
+                    style={styles.currencyList}
+                    contentContainerStyle={styles.currencyListContent}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {displayedCurrencies.map((code, index) => {
+                        const currency = getCurrency(code)
+                        const active = index === activeCurrencyIndex
+                        const displayValue = active
+                            ? activeAmount || "0"
+                            : formatExchangeAmount(amounts[index] ?? 0, locale)
+                        return (
+                            <View style={[styles.currencyRow, { borderBottomColor: colors.border }]} key={`${code}-${index}`}>
+                                <TouchableOpacity style={styles.currencySelector} onPress={() => { setActiveCurrencyIndex(index); openPicker("replace") }} onLongPress={() => toggleFavorite(code)}>
+                                    <CurrencyFlag region={currency.region} emoji={currency.flag} size={CURRENCY_FLAG_SIZE} />
+                                    <View style={styles.currencyIdentity}>
+                                        <View style={styles.codeLine}>
+                                            <Text style={[styles.currencyCode, { color: colors.text }]}>{code}</Text>
+                                            <Text style={[styles.currencyCaret, { color: colors.tertiaryText }]}>▾</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                                <View style={styles.amountColumn}>
+                                    {active ? (
+                                        <TextInput
+                                            style={[styles.amount, styles.amountInput, { color: colors.accent }]}
+                                            value={displayValue}
+                                            onChangeText={handleAmountChange}
+                                            keyboardType="decimal-pad"
+                                            showSoftInputOnFocus={false}
+                                            caretHidden
+                                            selectTextOnFocus
+                                            returnKeyType="done"
+                                            accessibilityLabel={`${currency.name[locale]} ${t("common.amount")}`}
+                                        />
+                                    ) : (
+                                        <TouchableOpacity onPress={() => changeActiveCurrency(index)}>
+                                            <Text style={[styles.amount, { color: colors.text }]} numberOfLines={1}>{displayValue}</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                    <Text style={[styles.currencyName, styles.amountName, { color: colors.secondaryText }]} numberOfLines={1}>{currency.name[locale]}</Text>
                                 </View>
-                            </TouchableOpacity>
-                            <View style={styles.amountButton}>
-                                {active ? (
-                                    <TextInput
-                                        style={[styles.amount, styles.amountInput, { color: colors.accent }]}
-                                        value={activeAmount}
-                                        onChangeText={handleAmountChange}
-                                        keyboardType={currency.decimals === 0 ? "number-pad" : "decimal-pad"}
-                                        selectTextOnFocus
-                                        returnKeyType="done"
-                                        accessibilityLabel={`${currency.name[locale]} ${t("common.amount")}`}
-                                    />
-                                ) : (
-                                    <TouchableOpacity onPress={() => changeActiveCurrency(index)}>
-                                        <Text style={[styles.amount, { color: colors.text }]} numberOfLines={1}>{displayValue}</Text>
-                                    </TouchableOpacity>
-                                )}
-                                <Text style={[styles.symbol, { color: colors.tertiaryText }]}>{currency.symbol}</Text>
                             </View>
-                            <View style={styles.rowActions}>
-                                <TouchableOpacity onPress={() => moveCurrency(index, -1)} disabled={index === 0} style={styles.rowAction}><Text style={[styles.rowActionText, { color: colors.secondaryText }, index === 0 && styles.disabled]}>↑</Text></TouchableOpacity>
-                                <TouchableOpacity onPress={() => moveCurrency(index, 1)} disabled={index === displayedCurrencies.length - 1} style={styles.rowAction}><Text style={[styles.rowActionText, { color: colors.secondaryText }, index === displayedCurrencies.length - 1 && styles.disabled]}>↓</Text></TouchableOpacity>
-                                <TouchableOpacity onPress={() => removeCurrency(index)} disabled={displayedCurrencies.length <= 1} style={styles.rowAction}><Text style={[styles.rowActionText, { color: "#d66" }, displayedCurrencies.length <= 1 && styles.disabled]}>×</Text></TouchableOpacity>
-                            </View>
-                        </View>
-                    )
-                })}
-                <TouchableOpacity style={styles.addCurrencyButton} onPress={() => openPicker("add")}>
-                    <LucideIcon name="plus" size={18} color={colors.accent} />
-                    <Text style={[styles.addCurrencyText, { color: colors.accent }]}>{t("currency.add")}</Text>
-                </TouchableOpacity>
-            </ScrollView>
+                        )
+                    })}
+                </ScrollView>
 
-            <TouchableOpacity style={styles.statusButton} onPress={() => void loadRates(true)} disabled={isRefreshing}>
-                {isRefreshing && <ActivityIndicator size="small" color={colors.secondaryText} />}
-                <Text style={[styles.statusText, { color: colors.secondaryText }]}>{rateStatus}</Text>
-                {!isRefreshing && <Text style={[styles.sourceText, { color: colors.tertiaryText }]}>{t("currency.rateSource")}</Text>}
-            </TouchableOpacity>
-            <Text style={[styles.inputHint, { color: colors.tertiaryText }]}>{t("currency.inputHint")}</Text>
+                <TouchableOpacity style={styles.statusButton} onPress={() => void loadRates(true)} disabled={isRefreshing}>
+                    {isRefreshing && <ActivityIndicator size="small" color={colors.secondaryText} />}
+                    <Text style={[styles.statusText, { color: colors.tertiaryText }]} numberOfLines={1}>{footerStatus}</Text>
+                </TouchableOpacity>
+
+                <CurrencyKeypad onPress={handleKeypadPress} onClear={clearActiveAmount} onBackspace={backspaceActiveAmount} />
+            </View>
 
             <CurrencyPicker visible={pickerVisible} searchText={searchText} favorites={favorites} locale={locale} t={t} onSearch={setSearchText} onClose={() => setPickerVisible(false)} onSelect={selectCurrency} onToggleFavorite={toggleFavorite} />
         </SafeAreaView>
+    )
+}
+
+type CurrencyKeypadProps = {
+    onPress: (value: string) => void
+    onClear: () => void
+    onBackspace: () => void
+}
+
+function CurrencyKeypad({ onPress, onClear, onBackspace }: CurrencyKeypadProps) {
+    const { colors } = useTheme()
+    const rows = [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], ["0", ".", ""]]
+
+    return (
+        <View style={[styles.keypad, { backgroundColor: colors.elevated, borderTopColor: colors.border }]}>
+            <View style={styles.keypadNumbers}>
+                {rows.map((row, rowIndex) => (
+                    <View style={styles.keypadRow} key={`currency-keypad-row-${rowIndex}`}>
+                        {row.map((value, columnIndex) => value ? (
+                            <TouchableOpacity
+                                key={value}
+                                style={[styles.keypadKey, { borderRightColor: colors.border, borderBottomColor: colors.border }]}
+                                onPress={() => onPress(value)}
+                            >
+                                <Text style={[styles.keypadText, { color: colors.text }]}>{value === "." ? "." : value}</Text>
+                            </TouchableOpacity>
+                        ) : <View style={styles.keypadKey} key={`empty-${rowIndex}-${columnIndex}`} />)}
+                    </View>
+                ))}
+            </View>
+            <View style={styles.keypadActions}>
+                <TouchableOpacity style={[styles.keypadAction, { borderBottomColor: colors.border }]} onPress={onClear}>
+                    <Text style={[styles.keypadActionText, { color: colors.accent }]}>AC</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.keypadAction} onPress={onBackspace}>
+                    <LucideIcon name="delete" size={30} color={colors.secondaryText} />
+                </TouchableOpacity>
+            </View>
+        </View>
     )
 }
 
@@ -305,35 +390,35 @@ function CurrencyPicker({ visible, searchText, favorites, locale, t, onSearch, o
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, width: "100%", backgroundColor: "black" },
-    header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
-    headerSpacer: { width: 36, height: 36 },
-    iconButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.1)", justifyContent: "center", alignItems: "center" },
-    title: { color: "white", fontSize: 20, fontWeight: "600" },
+    container: { flex: 1, width: "100%" },
+    currencySurface: { flex: 1, width: "100%", borderTopLeftRadius: 8, borderTopRightRadius: 8, overflow: "hidden" },
+    header: { height: CURRENCY_HEADER_HEIGHT, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 30, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "rgba(120,120,120,0.4)" },
+    menuButton: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, justifyContent: "center", alignItems: "center" },
+    iconButton: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center" },
+    title: { fontSize: 20, fontWeight: "500" },
     currencyList: { flex: 1 },
-    currencyListContent: { padding: 16, paddingBottom: 8 },
-    currencyRow: { minHeight: 62, flexDirection: "row", alignItems: "center", borderRadius: 14, paddingVertical: 8, paddingHorizontal: 10 },
-    currencyRowActive: { backgroundColor: "#1a1a1a" },
-    currencySelector: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
-    currencyIdentity: { flex: 1 },
-    currencyCode: { color: "white", fontSize: 18, fontWeight: "600" },
-    currencyName: { color: "#888", fontSize: 13, marginTop: 2 },
-    amountButton: { alignItems: "flex-end", maxWidth: "43%" },
-    amount: { color: "white", fontSize: 24, fontWeight: "500", textAlign: "right" },
-    amountInput: { minWidth: 110, paddingVertical: 0, paddingHorizontal: 0 },
-    amountActive: { color: "#F69A06" },
-    symbol: { color: "#777", fontSize: 13, marginTop: 1 },
-    rowActions: { flexDirection: "row", marginLeft: 6 },
-    rowAction: { width: 24, alignItems: "center", justifyContent: "center" },
-    rowActionText: { color: "#888", fontSize: 16 },
-    removeText: { color: "#d66" },
-    disabled: { color: "#333" },
-    addCurrencyButton: { flexDirection: "row", alignItems: "center", gap: 8, padding: 14, justifyContent: "center" },
-    addCurrencyText: { color: "#F69A06", fontSize: 16 },
-    statusButton: { minHeight: 42, alignItems: "center", justifyContent: "center", paddingHorizontal: 16, gap: 2 },
-    statusText: { color: "#777", fontSize: 12, textAlign: "center" },
-    sourceText: { color: "#444", fontSize: 10 },
-    inputHint: { textAlign: "center", fontSize: 12, paddingHorizontal: 16, paddingBottom: 12 },
+    currencyListContent: { paddingBottom: 0 },
+    currencyRow: { height: CURRENCY_ROW_HEIGHT, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 30 },
+    currencySelector: { flex: 1, flexDirection: "row", alignItems: "center", gap: 20, minWidth: 0 },
+    currencyIdentity: { flex: 1, minWidth: 0 },
+    codeLine: { flexDirection: "row", alignItems: "center" },
+    currencyCode: { fontSize: CURRENCY_CODE_FONT_SIZE, fontWeight: "400", letterSpacing: 0.2 },
+    currencyCaret: { fontSize: 17, marginLeft: 8, marginTop: 3 },
+    currencyName: { fontSize: CURRENCY_NAME_FONT_SIZE, marginTop: 2 },
+    amountColumn: { width: "42%", alignItems: "flex-end", paddingLeft: 8 },
+    amount: { fontSize: CURRENCY_AMOUNT_FONT_SIZE, fontWeight: "400", textAlign: "right", fontVariant: ["tabular-nums"] },
+    amountInput: { minWidth: 105, paddingVertical: 0, paddingHorizontal: 0 },
+    amountName: { maxWidth: "100%", textAlign: "right" },
+    statusButton: { height: CURRENCY_STATUS_HEIGHT, alignItems: "center", justifyContent: "center", paddingHorizontal: 16, gap: 2 },
+    statusText: { fontSize: 13, textAlign: "center" },
+    keypad: { height: CURRENCY_KEYPAD_HEIGHT, width: "100%", flexDirection: "row", borderTopWidth: StyleSheet.hairlineWidth },
+    keypadNumbers: { flex: 3 },
+    keypadRow: { flex: 1, flexDirection: "row" },
+    keypadKey: { flex: 1, alignItems: "center", justifyContent: "center", borderRightWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth },
+    keypadText: { fontSize: CURRENCY_KEYPAD_FONT_SIZE, fontWeight: "300" },
+    keypadActions: { flex: 1 },
+    keypadAction: { flex: 1, alignItems: "center", justifyContent: "center", borderBottomWidth: StyleSheet.hairlineWidth },
+    keypadActionText: { fontSize: 30, fontWeight: "400" },
     modalView: { flex: 1 },
     dismissArea: { flex: 1 },
     currencyPicker: { height: "80%", marginTop: "auto", backgroundColor: "#222", borderTopRightRadius: 20, borderTopLeftRadius: 20, padding: 20, alignItems: "center" },

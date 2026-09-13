@@ -9,7 +9,7 @@
   "common": { "back": "返回", "cancel": "取消", "done": "完成", "error": "发生错误", "retry": "重试", "year": "年", "month": "月", "day": "日", "price": "原价", "percent": "折扣率", "amount": "金额", "rate": "利率", "duration": "年限", "height": "身高", "weight": "体重" },
   "discount": { "savings": "节省金额", "finalPrice": "折后价" },
   "loan": { "monthly": "月供", "totalPaid": "总还款", "totalInterest": "总利息" },
-  "calculator": { "invalidInput": "输入无效", "paste": "粘贴", "clearAll": "完全清除", "openTools": "打开工具", "lightMode": "白天模式", "darkMode": "夜间模式" },
+  "calculator": { "invalidInput": "输入无效", "paste": "粘贴", "backspace": "退格", "clearAll": "完全清除", "openTools": "打开工具", "lightMode": "白天模式", "darkMode": "夜间模式" },
   "resultUnits": { "year": "年", "month": "个月", "day": "天", "week": "周" },
   "history": { "title": "历史记录", "today": "今天", "yesterday": "昨天", "empty": "暂无计算记录", "clear": "清除历史记录", "clearTitle": "清除历史记录", "clearMessage": "要删除全部计算历史吗？" },
   "units": {

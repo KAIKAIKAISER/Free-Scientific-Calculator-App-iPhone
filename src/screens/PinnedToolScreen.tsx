@@ -7,14 +7,15 @@ import { useTheme } from "../theme"
 
 type Props = {
     toolKey: string
+    onOpenTools?: () => void
 }
 
-export default ({ toolKey }: Props) => {
+export default ({ toolKey, onOpenTools }: Props) => {
     const { colors } = useTheme()
     if (toolKey === "currency") {
         return (
             <View style={[styles.container, { backgroundColor: colors.background }]}>
-                <Currency />
+                <Currency onOpenTools={onOpenTools} />
             </View>
         )
     }

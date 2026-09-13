@@ -162,7 +162,7 @@ const MainScreen = () => {
             key,
             render: key === "_calculator"
                 ? () => <Calculator onOpenTools={() => scrollViewRef.current?.scrollTo({ x: converterIndex * width, animated: true })} />
-                : () => <PinnedToolScreen toolKey={key} />,
+                : () => <PinnedToolScreen toolKey={key} onOpenTools={() => scrollViewRef.current?.scrollTo({ x: converterIndex * width, animated: true })} />,
         })),
         { key: "_converter", render: () => <Converter focused={pageIndex === converterIndex} pinnedTools={pinnedToolKeys} screenOrder={screenOrder} onPinnedToolsChange={handlePinnedToolsChange} onRearrangeChange={handleConverterRearrange} onDetailChange={handleConverterDetailChange} /> },
     ]

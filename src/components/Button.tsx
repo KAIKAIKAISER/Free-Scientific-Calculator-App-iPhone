@@ -4,17 +4,31 @@ import * as Haptics from "expo-haptics"
 import Svg, { Path } from "react-native-svg"
 import * as Localization from "expo-localization"
 import { useTheme } from "../theme"
+import LucideIcon from "./LucideIcon"
 
-export default ({ expanded, onPress, type, value, theme, label, action, inverted, hyperbolic, isRadian }: any) => {
+export default ({ expanded, onPress, type, value, theme, label, action, inverted, hyperbolic, isRadian, flat }: any) => {
     const { colors } = useTheme()
     const hapticFeedback = () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
+    if (type === "backspace") {
+        return (
+            <TouchableOpacity
+                key={value}
+                style={[styles.button, { backgroundColor: colors.surface }, flat && styles.flatButton]}
+                onPressIn={hapticFeedback}
+                onPress={() => action ? action() : onPress(value)}
+            >
+                <LucideIcon name="delete" size={30} color={colors.secondaryText} />
+            </TouchableOpacity>
+        )
+    }
 
     // If the button is a number, render the number, else render the label
     if (type === "number") {
         return (
             <TouchableOpacity
                 key={value}
-                style={[styles.button, { backgroundColor: colors.elevated }, expanded && { borderRadius: 18 }]}
+                style={[styles.button, { backgroundColor: colors.elevated }, expanded && { borderRadius: 18 }, flat && styles.flatButton]}
                 onPressIn={hapticFeedback}
                 onPress={() => {
                     if (action) return action()
@@ -41,6 +55,7 @@ export default ({ expanded, onPress, type, value, theme, label, action, inverted
                 theme === "secondary" && { backgroundColor: colors.mutedSurface },
                 theme === "expand" && { backgroundColor: colors.background },
                 expanded && { borderRadius: 18 },
+                flat && styles.flatButton,
 
                 inverted && label === "INV" && { backgroundColor: colors.border },
                 hyperbolic && label === "HYP" && { backgroundColor: colors.border },
@@ -111,6 +126,12 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 24
+    },
+    flatButton: {
+        borderRadius: 0,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: "rgba(120,120,120,0.22)",
+        padding: 0,
     }
 })
 

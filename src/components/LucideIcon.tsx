@@ -107,6 +107,17 @@ const icons: Record<string, El[]> = {
         { type: "rect", x: 14, y: 14, width: 7, height: 7, rx: 1 },
         { type: "rect", x: 3, y: 14, width: 7, height: 7, rx: 1 },
     ],
+    "grid-3x3": [
+        { type: "circle", cx: 5, cy: 5, r: 1, fill: "currentColor" },
+        { type: "circle", cx: 12, cy: 5, r: 1, fill: "currentColor" },
+        { type: "circle", cx: 19, cy: 5, r: 1, fill: "currentColor" },
+        { type: "circle", cx: 5, cy: 12, r: 1, fill: "currentColor" },
+        { type: "circle", cx: 12, cy: 12, r: 1, fill: "currentColor" },
+        { type: "circle", cx: 19, cy: 12, r: 1, fill: "currentColor" },
+        { type: "circle", cx: 5, cy: 19, r: 1, fill: "currentColor" },
+        { type: "circle", cx: 12, cy: 19, r: 1, fill: "currentColor" },
+        { type: "circle", cx: 19, cy: 19, r: 1, fill: "currentColor" },
+    ],
     "chevron-left": [
         { type: "path", d: "m15 18-6-6 6-6" },
     ],
@@ -154,6 +165,11 @@ const icons: Record<string, El[]> = {
         { type: "path", d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" },
         { type: "path", d: "M10 11v6" },
         { type: "path", d: "M14 11v6" },
+    ],
+    delete: [
+        { type: "path", d: "M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z" },
+        { type: "path", d: "m14 9-4 6" },
+        { type: "path", d: "m10 9 4 6" },
     ],
 }
 
