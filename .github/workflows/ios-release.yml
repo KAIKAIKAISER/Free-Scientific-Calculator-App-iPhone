@@ -64,7 +64,7 @@ jobs:
           rm -rf Payload Calculator-${RELEASE_TAG}.ipa
           mkdir Payload
           cp -R ios/build/Build/Products/Release-iphoneos/ConvCalc.app Payload/ConvCalc.app
-          ditto -c -k --norsrc Payload Calculator-${RELEASE_TAG}.ipa
+          zip -qry Calculator-${RELEASE_TAG}.ipa Payload
 
       - name: Create GitHub Release and upload IPA
         uses: softprops/action-gh-release@v2
